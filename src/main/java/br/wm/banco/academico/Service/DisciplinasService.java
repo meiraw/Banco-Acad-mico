@@ -5,6 +5,7 @@ import br.wm.banco.academico.DTOs.Response.DisciplinasResponseDTO;
 import br.wm.banco.academico.Exception.ResourceNotFoundException;
 import br.wm.banco.academico.Model.DisciplinasModel;
 import br.wm.banco.academico.Repository.DisciplinasRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ public class DisciplinasService {
         this.disciplinasRepository = disciplinasRepository;
     }
 
+    @Transactional
     public DisciplinasModel criar (DisciplinasRequestDTO dto){
         DisciplinasModel disciplinas = new DisciplinasModel();
 
@@ -38,11 +40,11 @@ public class DisciplinasService {
         return disciplinasRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("O id "+id+" não foi encontrado!"));
     }
 
-    public Page<DisciplinasResponseDTO> listarTudo(Pageable pageable ){
-        Page<DisciplinasModel> disciplinas = disciplinasRepository.findAll(pageable);
-        return disciplinas.map(DisciplinasResponseDTO:: new);
+    public Page<DisciplinasModel> listarTudo(Pageable pageable ){
+        return  disciplinasRepository.findAll(pageable);
     }
 
+    @Transactional
     public DisciplinasModel atualizar (DisciplinasRequestDTO dto, UUID id){
         DisciplinasModel novaDisciplina = buscarPorId(id);
         novaDisciplina.setNome(dto.getNome());
@@ -51,6 +53,7 @@ public class DisciplinasService {
         return disciplinasRepository.save(novaDisciplina);
     }
 
+    @Transactional
     public void excluir (UUID id){
         DisciplinasModel deletar = buscarPorId(id);
         disciplinasRepository.delete(deletar);
