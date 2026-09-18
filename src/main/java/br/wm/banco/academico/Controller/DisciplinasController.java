@@ -29,9 +29,10 @@ public class DisciplinasController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<DisciplinasModel>> listar (Pageable pageable ){
+    public ResponseEntity<Page<DisciplinasResponseDTO>> listar (Pageable pageable ){
         Page<DisciplinasModel> lista = disciplinasService.listarTudo(pageable);
-        return ResponseEntity.ok(lista);
+        Page<DisciplinasResponseDTO> resposta = lista.map(DisciplinasResponseDTO:: new);
+        return ResponseEntity.ok(resposta);
     }
 
     @GetMapping("/{id}")
@@ -41,7 +42,7 @@ public class DisciplinasController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DisciplinasResponseDTO> atualizar (@Valid @PathVariable UUID id , @RequestBody DisciplinasRequestDTO dto){
+    public ResponseEntity<DisciplinasResponseDTO> atualizar ( @PathVariable UUID id ,@Valid @RequestBody DisciplinasRequestDTO dto){
         DisciplinasModel novaDisciplinas = disciplinasService.atualizar(dto, id);
         return ResponseEntity.ok(new DisciplinasResponseDTO(novaDisciplinas));
     }

@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -34,4 +36,8 @@ public class DisciplinasModel {
         this.descricao = descricao;
         this.semestre = semestre;
     }
+
+    @OneToMany(mappedBy = "disciplina")
+    private List<MaterialModel> material = new ArrayList<>();
+
 }

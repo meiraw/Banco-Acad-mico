@@ -33,4 +33,5 @@ public class DisciplinasResponseDTO {
     public Integer getSemestre() {
         return semestre;
     }
+
 }
