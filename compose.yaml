@@ -1,0 +1,16 @@
+name: banco-academico
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: academicos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina a senha no .env}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - dados-academicos:/var/lib/postgresql/data
+
+volumes:
+  dados-academicos:
