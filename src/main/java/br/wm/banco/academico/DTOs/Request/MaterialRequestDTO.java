@@ -1,13 +1,13 @@
 package br.wm.banco.academico.DTOs.Request;
 
-import br.wm.banco.academico.Model.MaterialModel;
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.UUID;
 
 @NoArgsConstructor
 @Getter
@@ -23,17 +23,15 @@ public class MaterialRequestDTO {
     @Size(min = 2 , max = 100 , message = " A descrição  tem que ser de 2 à 100 caracteres!")
     private String descricao;
 
-    @NotBlank
+    @NotBlank(message = "O nome não pode ser vazio!")
     private String nomeArquivo;
 
-    @NotBlank
     private String tipoArquivo;
-
-    @NotBlank
     private String caminhoArquivo;
+    private Long tamanhoArquivo;
 
     @NotNull
-    private Long tamanhoArquivo;
+    private UUID disciplinaId;
 
     public MaterialRequestDTO (String titulo , String descricao,String nomeArquivo, String tipoArquivo , String caminhoArquivo , Long tamanhoArquivo){
         this.titulo = titulo;
@@ -42,9 +40,5 @@ public class MaterialRequestDTO {
         this.caminhoArquivo = caminhoArquivo;
         this.tamanhoArquivo = tamanhoArquivo;
         this.tipoArquivo = tipoArquivo;
-
     }
-
-
-
 }

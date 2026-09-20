@@ -24,7 +24,7 @@ public class MaterialModel {
     private String descricao;
 
     @ManyToOne
-    @JoinColumn(name = "disciplinas_id", nullable = false )
+    @JoinColumn(name = "disciplina_id", nullable = false )
     private DisciplinasModel disciplina;
 
     @Column(nullable = false)

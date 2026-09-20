@@ -14,7 +14,7 @@ public class MaterialResponseDTO {
     private String tipoArquivo;
     private String caminhoArquivo;
     private Long tamanhoArquivo;
-
+    private UUID disciplinaId;
 
     public MaterialResponseDTO(MaterialModel model){
         this.id = model.getId();
@@ -24,6 +24,7 @@ public class MaterialResponseDTO {
         this.tipoArquivo = model.getTipoArquivo();
         this.caminhoArquivo = model.getCaminhoArquivo();
         this.tamanhoArquivo = model.getTamanhoArquivo();
+        this.disciplinaId = model.getDisciplina().getId();
     }
 
 
@@ -52,5 +53,9 @@ public class MaterialResponseDTO {
 
     public Long getTamanhoArquivo() {
         return tamanhoArquivo;
+    }
+
+    public UUID getDisciplinaId() {
+        return disciplinaId;
     }
 }
