@@ -19,7 +19,7 @@ public class MaterialService {
 
 
     //Crie uma variável chamada uploadPath que representa o caminho da pasta uploads.
-    private final Path uploadPath  = Paths.get("Uploads");
+    private final Path uploadPath  = Paths.get("Uploads"); // Onde fica os arquivos
     //Path é o que representa um caminho
     //uploadPath nome da nossa variavel
     //uploads  nome da pasta que requeremos representar
@@ -43,7 +43,7 @@ public class MaterialService {
         //depois colocamos a disciplinas no cria() de material
 
         String nomeArquivo = arquivo.getOriginalFilename(); // Isso defini o nome do arquivo
-        Path caminhoArquivo = uploadPath.resolve(nomeArquivo); // Aqui definimos o caminho para os arquivos
+        Path caminhoArquivo = uploadPath.resolve(nomeArquivo); // Aqui definimos o caminho para os arquivos // Onde ficará este arquivo especificos
 
         material.setTitulo(dto.getTitulo());
         material.setDescricao(dto.getDescricao());
@@ -54,7 +54,9 @@ public class MaterialService {
         material.setTipoArquivo(arquivo.getContentType()); // Para os tipos de arquivos
         material.setCaminhoArquivo(dto.getCaminhoArquivo());
         material.setTamanhoArquivo(arquivo.getSize());//O tamanho do arquivo
+
         material.setDisciplina(disciplina); // esse é o set de disciplinas
+
         return materialRepository.save(material);
     }
 
