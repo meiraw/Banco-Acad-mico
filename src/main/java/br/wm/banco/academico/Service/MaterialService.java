@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
@@ -45,6 +47,14 @@ public class MaterialService {
         String nomeArquivo = arquivo.getOriginalFilename(); // Isso defini o nome do arquivo
         Path caminhoArquivo = uploadPath.resolve(nomeArquivo); // Aqui definimos o caminho para os arquivos // Onde ficará este arquivo especificos
 
+        try { // Tentar
+            Files.copy(
+                    arquivo.getInputStream(),//de onde //copiar um arquivo/conteúdo de um lugar para outro.
+                    caminhoArquivo // para onde
+            );
+        }catch(IOException e){ // Se der erro exiba essa imagem
+            throw new RuntimeException(e.getMessage()); // Ocorreu esse problema; pare a execução e lance esse erro.
+        }
         material.setTitulo(dto.getTitulo());
         material.setDescricao(dto.getDescricao());
 
@@ -56,6 +66,7 @@ public class MaterialService {
         material.setTamanhoArquivo(arquivo.getSize());//O tamanho do arquivo
 
         material.setDisciplina(disciplina); // esse é o set de disciplinas
+
 
         return materialRepository.save(material);
     }
