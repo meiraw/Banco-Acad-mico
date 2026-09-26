@@ -1,10 +1,11 @@
 package br.wm.banco.academico.Repository;
 
-import br.wm.banco.academico.Model.MaterialModel;
+import br.wm.banco.academico.Model.SemestreModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
+
 @Repository
-public interface MaterialRepository extends JpaRepository<MaterialModel, UUID> {
+public interface SemestreRepository extends JpaRepository<SemestreModel,UUID>{
 }

@@ -1,12 +1,11 @@
 package br.wm.banco.academico.Service;
 
 import br.wm.banco.academico.DTOs.Request.DisciplinasRequestDTO;
-import br.wm.banco.academico.DTOs.Response.DisciplinasResponseDTO;
+
 import br.wm.banco.academico.Exception.ResourceNotFoundException;
 import br.wm.banco.academico.Model.DisciplinasModel;
 import br.wm.banco.academico.Repository.DisciplinasRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,6 @@ public class DisciplinasService {
 
         disciplinas.setNome(dto.getNome());
         disciplinas.setDescricao(dto.getDescricao());
-        disciplinas.setSemestre(dto.getSemestre());
 
         return disciplinasRepository.save(disciplinas);
     }
@@ -49,7 +47,6 @@ public class DisciplinasService {
         DisciplinasModel novaDisciplina = buscarPorId(id);
         novaDisciplina.setNome(dto.getNome());
         novaDisciplina.setDescricao(dto.getDescricao());
-        novaDisciplina.setSemestre(dto.getSemestre());
         return disciplinasRepository.save(novaDisciplina);
     }
 

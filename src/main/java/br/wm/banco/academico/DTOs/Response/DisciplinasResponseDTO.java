@@ -8,14 +8,12 @@ public class DisciplinasResponseDTO {
     private UUID id;
     private String nome;
     private String descricao;
-    private Integer semestre;
 
     public DisciplinasResponseDTO(DisciplinasModel model){
 
         this.id = model.getId();
         this.nome = model.getNome();
         this.descricao = model.getDescricao();
-        this.semestre = model.getSemestre();
     }
 
     public String getDescricao() {
@@ -30,8 +28,5 @@ public class DisciplinasResponseDTO {
         return nome;
     }
 
-    public Integer getSemestre() {
-        return semestre;
-    }
 
 }

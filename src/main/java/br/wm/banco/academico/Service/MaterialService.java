@@ -53,16 +53,16 @@ public class MaterialService {
                     caminhoArquivo // para onde
             );
         }catch(IOException e){ // Se der erro exiba essa imagem
-            throw new RuntimeException(e.getMessage()); // Ocorreu esse problema; pare a execução e lance esse erro.
+            throw new RuntimeException("Erro ao salvar o arquivo",e ); // Ocorreu esse problema; pare a execução e lance esse erro.
         }
         material.setTitulo(dto.getTitulo());
         material.setDescricao(dto.getDescricao());
 
         // material.setNomeArquivo(dto.getNomeArquivo()); antes da implementação do multipartFile
-        material.setNomeArquivo(arquivo.getOriginalFilename()); //Depois  , aqui temos o getOriginalFilename , para os nomes do arquivos
+        material.setNomeArquivo(nomeArquivo); //Depois  , aqui temos o getOriginalFilename , para os nomes do arquivos
         //Pega informações do arquivo
         material.setTipoArquivo(arquivo.getContentType()); // Para os tipos de arquivos
-        material.setCaminhoArquivo(dto.getCaminhoArquivo());
+        material.setCaminhoArquivo(caminhoArquivo.toString());
         material.setTamanhoArquivo(arquivo.getSize());//O tamanho do arquivo
 
         material.setDisciplina(disciplina); // esse é o set de disciplinas

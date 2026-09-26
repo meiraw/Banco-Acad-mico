@@ -19,15 +19,9 @@ public class DisciplinasRequestDTO {
     @NotBlank(message = "A descrição não pode ser vazio!")
     private String descricao;
 
-    @Setter
-    @NotNull
-    private Integer semestre;
-
-
-    public DisciplinasRequestDTO(String nome , String descricao , Integer semestre){
+    public DisciplinasRequestDTO(String nome , String descricao){
         this.nome = nome;
         this.descricao = descricao;
-        this.semestre =semestre;
     }
 
 

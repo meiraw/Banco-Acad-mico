@@ -1,0 +1,11 @@
+package br.wm.banco.academico.Controller;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/semestre")
+public class SemestreController {
+
+
+}

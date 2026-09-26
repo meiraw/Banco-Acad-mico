@@ -26,18 +26,17 @@ public class DisciplinasModel {
     @Column(nullable = false)
     private String descricao;
 
-    @Setter
-    @Column(nullable = false)
-    private Integer semestre;
 
-
-    public DisciplinasModel(String nome, String descricao, Integer semestre){
+    public DisciplinasModel(String nome, String descricao){
         this.nome = nome;
         this.descricao = descricao;
-        this.semestre = semestre;
     }
 
     @OneToMany(mappedBy = "disciplina")
     private List<MaterialModel> material = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "semestre_id", nullable = false)
+    private SemestreModel semestre;
 
 }

@@ -26,6 +26,7 @@ public class MaterialRequestDTO {
     @NotBlank(message = "O nome não pode ser vazio!")
     private String nomeArquivo;
 
+
     private String tipoArquivo;
     private String caminhoArquivo;
     private Long tamanhoArquivo;
