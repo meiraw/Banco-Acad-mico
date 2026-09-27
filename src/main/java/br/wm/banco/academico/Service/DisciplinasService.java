@@ -17,12 +17,18 @@ import java.util.UUID;
 public class DisciplinasService {
 
 
+
+
     //Injeção de dependencia , subtituimos o @Autowired pelo metodo
     private final DisciplinasRepository disciplinasRepository;
+    private final SemestreService semestreService;
     public DisciplinasService(
-    DisciplinasRepository disciplinasRepository){
+    DisciplinasRepository disciplinasRepository,SemestreService semestreService){
         this.disciplinasRepository = disciplinasRepository;
+        this.semestreService = semestreService;
     }
+
+
 
     @Transactional
     public DisciplinasModel criar (DisciplinasRequestDTO dto){

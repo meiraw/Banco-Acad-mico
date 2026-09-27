@@ -30,7 +30,7 @@ public class SemestreModel {
     private Integer  periodo;
 
     @Setter
-    @OneToMany(mappedBy = "Semestre")
+    @OneToMany(mappedBy = "semestre")
     private List<DisciplinasModel> disciplina ;
 
 }

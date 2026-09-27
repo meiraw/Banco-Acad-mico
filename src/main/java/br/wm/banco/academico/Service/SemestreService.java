@@ -3,6 +3,7 @@ package br.wm.banco.academico.Service;
 import br.wm.banco.academico.DTOs.Request.SemestreRequestDTO;
 import br.wm.banco.academico.Exception.ResourceNotFoundException;
 import br.wm.banco.academico.Model.SemestreModel;
+import br.wm.banco.academico.Repository.DisciplinasRepository;
 import br.wm.banco.academico.Repository.SemestreRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
