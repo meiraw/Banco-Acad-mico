@@ -23,10 +23,8 @@ public class MaterialRequestDTO {
     @Size(min = 2 , max = 100 , message = " A descrição  tem que ser de 2 à 100 caracteres!")
     private String descricao;
 
-    @NotBlank(message = "O nome não pode ser vazio!")
+
     private String nomeArquivo;
-
-
     private String tipoArquivo;
     private String caminhoArquivo;
     private Long tamanhoArquivo;

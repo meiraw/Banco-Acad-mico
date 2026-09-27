@@ -4,6 +4,7 @@ import br.wm.banco.academico.DTOs.Request.DisciplinasRequestDTO;
 
 import br.wm.banco.academico.Exception.ResourceNotFoundException;
 import br.wm.banco.academico.Model.DisciplinasModel;
+import br.wm.banco.academico.Model.SemestreModel;
 import br.wm.banco.academico.Repository.DisciplinasRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -33,10 +34,11 @@ public class DisciplinasService {
     @Transactional
     public DisciplinasModel criar (DisciplinasRequestDTO dto){
         DisciplinasModel disciplinas = new DisciplinasModel();
+        SemestreModel semestre = semestreService.buscarPorId(dto.getSemestreId());
 
         disciplinas.setNome(dto.getNome());
         disciplinas.setDescricao(dto.getDescricao());
-
+        disciplinas.setSemestre(semestre);
         return disciplinasRepository.save(disciplinas);
     }
 
@@ -50,9 +52,14 @@ public class DisciplinasService {
 
     @Transactional
     public DisciplinasModel atualizar (DisciplinasRequestDTO dto, UUID id){
+
         DisciplinasModel novaDisciplina = buscarPorId(id);
+        SemestreModel semestre = semestreService.buscarPorId(dto.getSemestreId());
+
         novaDisciplina.setNome(dto.getNome());
         novaDisciplina.setDescricao(dto.getDescricao());
+        novaDisciplina.setSemestre(semestre);
+
         return disciplinasRepository.save(novaDisciplina);
     }
 

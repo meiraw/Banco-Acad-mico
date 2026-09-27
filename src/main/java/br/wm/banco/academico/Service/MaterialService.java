@@ -46,8 +46,10 @@ public class MaterialService {
 
         String nomeArquivo = arquivo.getOriginalFilename(); // Isso defini o nome do arquivo
         Path caminhoArquivo = uploadPath.resolve(nomeArquivo); // Aqui definimos o caminho para os arquivos // Onde ficará este arquivo especificos
+        System.out.println("ARQUIVO SALVO EM: " + caminhoArquivo.toAbsolutePath());
 
         try { // Tentar
+            Files.createDirectories(uploadPath);
             Files.copy(
                     arquivo.getInputStream(),//de onde //copiar um arquivo/conteúdo de um lugar para outro.
                     caminhoArquivo // para onde

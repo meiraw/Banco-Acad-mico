@@ -32,9 +32,11 @@ public class DisciplinasModel {
         this.descricao = descricao;
     }
 
+    @Setter
     @OneToMany(mappedBy = "disciplina")
     private List<MaterialModel> material = new ArrayList<>();
 
+    @Setter
     @ManyToOne
     @JoinColumn(name = "semestre_id", nullable = false)
     private SemestreModel semestre;
