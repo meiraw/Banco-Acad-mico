@@ -90,11 +90,8 @@ public class MaterialService {
 
         novoMaterial.setTitulo(dto.getTitulo());
         novoMaterial.setDescricao(dto.getDescricao());
-        novoMaterial.setNomeArquivo(dto.getNomeArquivo());
-        novoMaterial.setTipoArquivo(dto.getTipoArquivo());
-        novoMaterial.setCaminhoArquivo(dto.getCaminhoArquivo());
-        novoMaterial.setTamanhoArquivo(dto.getTamanhoArquivo());
         novoMaterial.setDisciplina(novaDisciplina); // esse é o set de disciplinas
+
         return materialRepository.save(novoMaterial);
     }
 

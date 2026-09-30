@@ -7,24 +7,30 @@ import java.util.UUID;
 public class SemestreResponseDTO {
 
     private UUID id;
-    private Integer ano;
-    private Integer periodo;
+    private Integer numero;
+    private String nome;
+    private UUID cursoId;
 
     public SemestreResponseDTO(SemestreModel model){
         this.id = model.getId();
-        this.ano = model.getAno();
-        this.periodo = model.getPeriodo();
+        this.numero = model.getNumero();
+        this.nome = model.getNome();
+        this.cursoId = model.getCurso().getId();
     }
 
     public UUID getId() {
         return id;
     }
 
-    public Integer getAno() {
-        return ano;
+    public Integer getNumero() {
+        return numero;
     }
 
-    public Integer getPeriodo() {
-        return periodo;
+    public String getNome() {
+        return nome;
+    }
+
+    public UUID getCursoId() {
+        return cursoId;
     }
 }

@@ -23,14 +23,18 @@ public class SemestreModel {
 
     @Setter
     @Column(nullable = false)
-    private Integer  ano;
+    private String nome;
 
     @Setter
     @Column(nullable = false)
-    private Integer  periodo;
+    private Integer  numero;
 
     @Setter
     @OneToMany(mappedBy = "semestre")
-    private List<DisciplinasModel> disciplina ;
+    private List<DisciplinasModel> disciplinas;
 
+    @Setter
+    @ManyToOne
+    @JoinColumn(name = "curso_id", nullable = false )
+    private CursoModel curso;
 }

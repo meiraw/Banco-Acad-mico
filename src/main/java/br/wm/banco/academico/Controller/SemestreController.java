@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -30,9 +31,14 @@ public class SemestreController {
     }
 
     @GetMapping
-    public ResponseEntity <Page<SemestreResponseDTO>> listar (Pageable pageable){
-        Page<SemestreModel> listar = semestreService.listar(pageable);
-        Page<SemestreResponseDTO> resposta = listar.map(SemestreResponseDTO:: new);
+    public ResponseEntity<List<SemestreResponseDTO>> listar() {
+
+        List<SemestreModel> semestres = semestreService.listar();
+
+        List<SemestreResponseDTO> resposta = semestres.stream()
+                .map(SemestreResponseDTO::new)
+                .toList();
+
         return ResponseEntity.ok(resposta);
     }
 

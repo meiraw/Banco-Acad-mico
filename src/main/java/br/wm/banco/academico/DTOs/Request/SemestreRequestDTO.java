@@ -6,20 +6,27 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @NoArgsConstructor
 public class SemestreRequestDTO {
 
     @Setter
     @NotNull
-    private Integer ano;
+    private Integer numero;
 
     @Setter
     @NotNull
-    private Integer periodo;
+    private String nome ;
 
-    public SemestreRequestDTO(Integer ano ,  Integer periodo){
-        this.ano = ano;
-        this.periodo = periodo;
+    @Setter
+    @NotNull
+    private UUID cursoId;
+
+    public SemestreRequestDTO(Integer numero , String nome, UUID cursoId){
+        this.numero = numero;
+        this.nome = nome;
+        this.cursoId = cursoId;
     }
 }

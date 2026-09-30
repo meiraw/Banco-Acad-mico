@@ -9,29 +9,32 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
 public class SemestreService {
 
     private final SemestreRepository semestreRepository;
+    private final CursoService cursoService;
 
-    public SemestreService (SemestreRepository semestreRepository){
+    public SemestreService (SemestreRepository semestreRepository, CursoService cursoService){
         this.semestreRepository = semestreRepository;
+        this.cursoService = cursoService;
     }
 
 
     public SemestreModel criar (SemestreRequestDTO dto ){
         SemestreModel semestre = new SemestreModel();
 
-        semestre.setAno(dto.getAno());
-        semestre.setPeriodo(dto.getPeriodo());
+        semestre.setNumero(dto.getNumero());
+        semestre.setNome(dto.getNome());
 
         return semestreRepository.save(semestre);
     }
 
-    public Page<SemestreModel> listar (Pageable pageable ){
-        return semestreRepository.findAll(pageable );
+    public List<SemestreModel> listar() {
+        return semestreRepository.findAll();
     }
 
     public SemestreModel buscarPorId(UUID id){
@@ -42,8 +45,8 @@ public class SemestreService {
 
         SemestreModel novoSemestre = buscarPorId(id);
 
-        novoSemestre.setAno(dto.getAno());
-        novoSemestre.setPeriodo(dto.getPeriodo());
+        novoSemestre.setNumero(dto.getNumero());
+        novoSemestre.setNome(dto.getNome());
 
         return semestreRepository.save(novoSemestre);
     }
