@@ -33,3 +33,7 @@ build/
 .vscode/
 .env.env
 .env
+
+### Frontend ###
+node_modules/
+frontend/dist/
