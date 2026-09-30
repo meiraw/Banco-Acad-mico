@@ -23,6 +23,7 @@ public class CursoModel {
     @Column(nullable = false, unique = true)
     private String nome;
 
+    @Setter
     @OneToMany(mappedBy = "curso")
     private List<SemestreModel> semestres;
 }

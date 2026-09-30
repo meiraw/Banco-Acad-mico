@@ -30,5 +30,7 @@ public class DisciplinasResponseDTO {
         return nome;
     }
 
-
+    public UUID getSemestreId() {
+        return semestreId;
+    }
 }

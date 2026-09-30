@@ -2,11 +2,9 @@ package br.wm.banco.academico.Service;
 
 import br.wm.banco.academico.DTOs.Request.SemestreRequestDTO;
 import br.wm.banco.academico.Exception.ResourceNotFoundException;
+import br.wm.banco.academico.Model.CursoModel;
 import br.wm.banco.academico.Model.SemestreModel;
-import br.wm.banco.academico.Repository.DisciplinasRepository;
 import br.wm.banco.academico.Repository.SemestreRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,12 +22,14 @@ public class SemestreService {
     }
 
 
-    public SemestreModel criar (SemestreRequestDTO dto ){
-        SemestreModel semestre = new SemestreModel();
+    public SemestreModel criar (SemestreRequestDTO dto  ){
 
+        CursoModel curso = cursoService.buscarPorId(dto.getCursoId());
+
+        SemestreModel semestre = new SemestreModel();
         semestre.setNumero(dto.getNumero());
         semestre.setNome(dto.getNome());
-
+        semestre.setCurso(curso);
         return semestreRepository.save(semestre);
     }
 
@@ -43,10 +43,13 @@ public class SemestreService {
 
     public SemestreModel atualizar (SemestreRequestDTO dto, UUID id){
 
+        CursoModel curso = cursoService.buscarPorId(dto.getCursoId());
+
         SemestreModel novoSemestre = buscarPorId(id);
 
         novoSemestre.setNumero(dto.getNumero());
         novoSemestre.setNome(dto.getNome());
+        novoSemestre.setCurso(curso);
 
         return semestreRepository.save(novoSemestre);
     }
