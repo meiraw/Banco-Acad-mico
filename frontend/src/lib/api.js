@@ -16,7 +16,15 @@ const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: J
 const lista = p => req(`${p}?size=500`).then(page => page.content)
 
 export const api = {
-  semestres: () => lista('/semestres'),
+  cursos: () => req('/curso'),
+  semestres: () => req('/semestres').then(s => s.sort((a, b) => a.numero - b.numero || a.nome.localeCompare(b.nome))),
+  criarCurso: d => req('/curso', { method: 'POST', ...json(d) }),
+  atualizarCurso: (id, d) => req(`/curso/${id}`, { method: 'PUT', ...json(d) }),
+  excluirCurso: id => req(`/curso/${id}`, { method: 'DELETE' }),
+  atualizarSemestre: (id, d) => req(`/semestres/${id}`, { method: 'PUT', ...json(d) }),
+  excluirSemestre: id => req(`/semestres/${id}`, { method: 'DELETE' }),
+  atualizarDisciplina: (id, d) => req(`/disciplinas/${id}`, { method: 'PUT', ...json(d) }),
+  excluirDisciplina: id => req(`/disciplinas/${id}`, { method: 'DELETE' }),
   disciplinas: () => lista('/disciplinas'),
   materiais: () => lista('/material'),
   criarSemestre: d => req('/semestres', { method: 'POST', ...json(d) }),
@@ -40,5 +48,5 @@ export function categoria(tipo = '') {
   return 'Outro'
 }
 
-export const rotuloSemestre = s => `${s.ano}/${s.periodo}`
+export const rotuloSemestre = s => `${s.numero}º semestre — ${s.nome}`
 export const tamanho = b => (b == null ? '' : b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)

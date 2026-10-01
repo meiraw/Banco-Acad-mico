@@ -1,12 +1,12 @@
 import { FileText, Presentation, ImageIcon, FileQuestion, Eye, Heart, Trash2 } from 'lucide-react'
-import { categoria, tamanho } from '../lib/api.js'
+import { categoria, tamanho, rotuloSemestre } from '../lib/api.js'
 import { corSemestre } from '../lib/academico.js'
 import { useFavoritos } from '../lib/useFavoritos.js'
 import { PreviaArquivo } from './PreviaArquivo.jsx'
 
 const ICONES = { PDF: FileText, Slides: Presentation, Imagem: ImageIcon, Outro: FileQuestion }
 
-export function MaterialCard({ material, disciplina, semestreIndice, onVisualizar, onExcluir }) {
+export function MaterialCard({ material, disciplina, semestreIndice, semestre, cursos = [], onVisualizar, onExcluir }) {
   const cat = categoria(material.tipoArquivo)
   const Icone = ICONES[cat]
   const { isFavorito, alternar } = useFavoritos()
@@ -21,7 +21,7 @@ export function MaterialCard({ material, disciplina, semestreIndice, onVisualiza
         <div className="flex items-start justify-between gap-2">
           {semestreIndice != null ? (
             <span className="label-mono w-fit rounded-md px-2 py-1 font-semibold text-neutral-900" style={{ backgroundColor: corSemestre(semestreIndice) }}>
-              {disciplina?.nome ? 'Semestre' : '—'}
+              {semestre ? rotuloSemestre(semestre) : 'Semestre'}
             </span>
           ) : <span />}
           <button
@@ -37,6 +37,8 @@ export function MaterialCard({ material, disciplina, semestreIndice, onVisualiza
             <Heart className={`size-4 ${favorito ? 'fill-current' : ''}`} />
           </button>
         </div>
+
+        {semestre && <p className="label-mono text-muted-foreground">{cursos.find(c => c.id === semestre.cursoId)?.nome}</p>}
 
         <h3 className="line-clamp-2 text-lg font-semibold">
           <button type="button" onClick={() => onVisualizar(material)} className="text-left transition-colors hover:text-primary">

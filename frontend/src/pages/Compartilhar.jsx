@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { UploadCloud, ShieldAlert } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
 import { api, rotuloSemestre } from '../lib/api.js'
 
 export function Compartilhar() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const [cursoId, setCursoId] = useState(params.get('curso') || '')
+  const [semestreId, setSemestreId] = useState(params.get('semestre') || '')
+  const [cursos, setCursos] = useState([])
   const [semestres, setSemestres] = useState([])
   const [disciplinas, setDisciplinas] = useState([])
   const [titulo, setTitulo] = useState('')
@@ -19,18 +23,23 @@ export function Compartilhar() {
   const [enviando, setEnviando] = useState(false)
 
   useEffect(() => {
-    Promise.all([api.semestres(), api.disciplinas()]).then(([s, d]) => {
-      setSemestres(s.sort((a, b) => a.ano - b.ano || a.periodo - b.periodo))
+    Promise.all([api.cursos(), api.semestres(), api.disciplinas()]).then(([c, s, d]) => {
+      setCursos(c); setSemestres(s)
+      const inicial = s.find(semestre => semestre.id === params.get('semestre'))
+      if (!params.get('curso') && inicial) setCursoId(inicial.cursoId)
       setDisciplinas(d)
-      if (d[0]) setDisciplinaId(d[0].id)
     }).catch(e => setErro(e.message))
   }, [])
+
+  const semestresVisiveis = semestres.filter(s => s.cursoId === cursoId)
+  const disciplinasVisiveis = disciplinas.filter(d => d.semestreId === semestreId && semestresVisiveis.some(s => s.id === d.semestreId))
 
   async function enviar(e) {
     e.preventDefault()
     setErro('')
-    if (titulo.trim().length < 4) { setErro('Informe um título descritivo (mínimo 4 caracteres).'); return }
-    if (!disciplinaId) { setErro('Selecione a disciplina.'); return }
+    if (titulo.trim().length < 2) { setErro('Informe um título com pelo menos 2 caracteres.'); return }
+    if (descricao.trim().length < 2) { setErro('Informe uma descrição com pelo menos 2 caracteres.'); return }
+    if (!disciplinasVisiveis.some(d => d.id === disciplinaId)) { setErro('Selecione a disciplina.'); return }
     if (!arquivo) { setErro('Selecione o arquivo do material.'); return }
     if (arquivo.size > 20 * 1024 * 1024) { setErro('O arquivo deve ter até 20 MB.'); return }
     if (protegido && referencia.trim().length < 10) { setErro('Como o material é protegido por direitos autorais, a referência bibliográfica é obrigatória.'); return }
@@ -38,13 +47,13 @@ export function Compartilhar() {
 
     setEnviando(true)
     try {
-      await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim() || 'Sem descrição', disciplinaId }, arquivo)
-      navigate('/painel', { replace: true })
+      await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId }, arquivo)
+      navigate(`/painel?curso=${cursoId}&semestre=${semestreId}`, { replace: true })
     } catch (err) { setErro(err.message); setEnviando(false) }
   }
 
   return (
-    <AppShell semestres={semestres} rotuloSemestre={rotuloSemestre}>
+    <AppShell cursos={cursos} semestres={semestresVisiveis} rotuloSemestre={rotuloSemestre}>
       <div className="mx-auto max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight">Compartilhar material</h1>
         <p className="mt-1 text-muted-foreground">Ajude seus colegas enviando resumos, listas, slides e anotações.</p>
@@ -63,12 +72,28 @@ export function Compartilhar() {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="disciplina" className="label-mono block">Disciplina</label>
-            <select id="disciplina" value={disciplinaId} onChange={e => setDisciplinaId(e.target.value)} required className="input-base">
+            <label htmlFor="curso" className="label-mono block">Curso</label>
+            <select id="curso" required value={cursoId} onChange={e => { setCursoId(e.target.value); setSemestreId(''); setDisciplinaId('') }} className="input-base">
               <option value="">Selecione…</option>
-              {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              {cursos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
-            {!disciplinas.length && <p className="text-sm text-muted-foreground">Nenhuma disciplina cadastrada ainda — crie uma no painel antes de enviar.</p>}
+            {!cursos.length && <p className="text-sm text-muted-foreground">Cadastre um curso no painel antes de enviar.</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="semestre" className="label-mono block">Semestre</label>
+            <select id="semestre" required disabled={!cursoId} value={semestreId} onChange={e => { setSemestreId(e.target.value); setDisciplinaId('') }} className="input-base">
+              <option value="">Selecione…</option>
+              {semestresVisiveis.map(s => <option key={s.id} value={s.id}>{rotuloSemestre(s)}</option>)}
+            </select>
+            {cursoId && !semestresVisiveis.length && <p className="text-sm text-muted-foreground">Este curso ainda não tem semestres. Cadastre um no painel.</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="disciplina" className="label-mono block">Disciplina</label>
+            <select id="disciplina" disabled={!semestreId} value={disciplinaId} onChange={e => setDisciplinaId(e.target.value)} required className="input-base">
+              <option value="">Selecione…</option>
+              {disciplinasVisiveis.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+            </select>
+            {semestreId && !disciplinasVisiveis.length && <p className="text-sm text-muted-foreground">Nenhuma disciplina cadastrada ainda — crie uma no painel antes de enviar.</p>}
           </div>
 
           <div className="space-y-1.5">

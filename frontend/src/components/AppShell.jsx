@@ -4,7 +4,7 @@ import { useSessao } from '../lib/sessao.jsx'
 import { iniciais, corSemestre } from '../lib/academico.js'
 import { ThemeToggle } from './ThemeToggle.jsx'
 
-export function AppShell({ semestres = [], rotuloSemestre, children }) {
+export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children }) {
   const { perfil, sair } = useSessao()
   const navigate = useNavigate()
   const location = useLocation()
@@ -24,6 +24,7 @@ export function AppShell({ semestres = [], rotuloSemestre, children }) {
           </Link>
           <div className="flex-1" />
           <ThemeToggle />
+          <Link to="/admin" className="btn btn-ghost" aria-label="Painel administrativo"><ShieldCheck className="size-4" /><span className="hidden sm:inline">Admin</span></Link>
           <Link to="/perfil" className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold leading-tight">{perfil?.nome ?? 'Acadêmico'}</p>
@@ -43,24 +44,27 @@ export function AppShell({ semestres = [], rotuloSemestre, children }) {
             <GraduationCap className="size-5 text-primary" />
             <div>
               <p className="font-semibold text-primary">Semestres</p>
-              <p className="label-mono text-muted-foreground">Ciência da Computação</p>
+              <p className="label-mono text-muted-foreground">Organização por curso</p>
             </div>
           </div>
           <nav className="space-y-1">
             {semestres.map((s, i) => (
               <Link
                 key={s.id}
-                to={`/painel?semestre=${s.id}`}
+                to={`/painel?curso=${s.cursoId}&semestre=${s.id}`}
                 className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-surface-container hover:text-primary"
               >
                 <span className="grid size-6 shrink-0 place-items-center rounded font-semibold text-neutral-900" style={{ backgroundColor: corSemestre(i) }}>
-                  {i + 1}
+                  {s.numero}
                 </span>
-                {rotuloSemestre(s)}
+                <span>{rotuloSemestre(s)}<span className="mt-0.5 block text-xs">{cursos.find(c => c.id === s.cursoId)?.nome}</span></span>
               </Link>
             ))}
           </nav>
           <div className="my-4 h-px bg-border" />
+          <Link to="/admin" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-surface-container hover:text-primary">
+            <ShieldCheck className="size-4" /> Administração
+          </Link>
           <Link to="/favoritos" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-surface-container hover:text-primary">
             <Star className="size-4" /> Favoritos
           </Link>

@@ -9,6 +9,7 @@ import { Favoritos } from './pages/Favoritos.jsx'
 import { Perfil } from './pages/Perfil.jsx'
 import { Sobre } from './pages/Sobre.jsx'
 import { Termos } from './pages/Termos.jsx'
+import { Admin } from './pages/Admin.jsx'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/compartilhar" element={<RequireAuth><Compartilhar /></RequireAuth>} />
           <Route path="/favoritos" element={<RequireAuth><Favoritos /></RequireAuth>} />
           <Route path="/perfil" element={<RequireAuth><Perfil /></RequireAuth>} />
+          <Route path="/admin" element={<RequireAuth><Admin /></RequireAuth>} />
           <Route path="*" element={<Home />} />
         </Routes>
       </BrowserRouter>

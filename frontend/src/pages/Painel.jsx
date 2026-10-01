@@ -4,7 +4,7 @@ import { Search, Sparkles, Upload, ChevronRight, Star, PlusCircle } from 'lucide
 import { AppShell } from '../components/AppShell.jsx'
 import { MaterialCard } from '../components/MaterialCard.jsx'
 import { VisualizadorMaterial } from '../components/VisualizadorMaterial.jsx'
-import { NovoSemestre, NovaDisciplina } from '../components/Gerenciar.jsx'
+import { NovoCurso, NovoSemestre, NovaDisciplina } from '../components/Gerenciar.jsx'
 import { api, categoria, rotuloSemestre } from '../lib/api.js'
 import { useSessao } from '../lib/sessao.jsx'
 
@@ -14,6 +14,9 @@ export function Painel() {
   const { perfil } = useSessao()
   const [params, setParams] = useSearchParams()
   const semestreId = params.get('semestre')
+  const cursoId = params.get('curso')
+  const disciplinaId = params.get('disciplina')
+  const [cursos, setCursos] = useState([])
 
   const [semestres, setSemestres] = useState([])
   const [disciplinas, setDisciplinas] = useState([])
@@ -27,8 +30,9 @@ export function Painel() {
 
   async function carregar() {
     try {
-      const [s, d, m] = await Promise.all([api.semestres(), api.disciplinas(), api.materiais()])
-      setSemestres(s.sort((a, b) => a.ano - b.ano || a.periodo - b.periodo))
+      const [c, s, d, m] = await Promise.all([api.cursos(), api.semestres(), api.disciplinas(), api.materiais()])
+      setCursos(c)
+      setSemestres(s)
       setDisciplinas(d); setMateriais(m); setErro('')
     } catch (e) { setErro(e.message) } finally { setCarregando(false) }
   }
@@ -36,16 +40,24 @@ export function Painel() {
 
   const discPorId = useMemo(() => Object.fromEntries(disciplinas.map(d => [d.id, d])), [disciplinas])
   const semestreIndicePorDisc = useMemo(() => Object.fromEntries(disciplinas.map(d => [d.id, semestres.findIndex(s => s.id === d.semestreId)])), [disciplinas, semestres])
-  const discVisiveis = disciplinas.filter(d => !semestreId || d.semestreId === semestreId)
+  const semestresVisiveis = semestres.filter(s => !cursoId || s.cursoId === cursoId)
+  const semestresIds = new Set(semestresVisiveis.map(s => s.id))
+  const discVisiveis = disciplinas.filter(d => semestresIds.has(d.semestreId) && (!semestreId || d.semestreId === semestreId))
+  const disciplinasIds = new Set(discVisiveis.map(d => d.id))
+  function selecionarSemestre(id) {
+    setParams({ ...(cursoId ? { curso: cursoId } : {}), ...(id ? { semestre: id } : {}) })
+  }
 
   const q = termo.trim().toLowerCase()
   const filtrados = materiais.filter(m => {
     const d = discPorId[m.disciplinaId]
-    if (semestreId && d?.semestreId !== semestreId) return false
+    if (!disciplinasIds.has(m.disciplinaId)) return false
+    if (disciplinaId && m.disciplinaId !== disciplinaId) return false
     if (tipo !== 'Todos' && categoria(m.tipoArquivo) !== tipo) return false
     return !q || `${m.titulo} ${d?.nome ?? ''}`.toLowerCase().includes(q)
   })
 
+  const urlCompartilhar = `/compartilhar?${new URLSearchParams({ ...(cursoId ? { curso: cursoId } : {}), ...(semestreId ? { semestre: semestreId } : {}) })}`
   const primeiroNome = perfil?.nome?.split(' ')[0] ?? 'Acadêmico'
   const fechar = () => setModal(null)
   const salvo = () => { fechar(); carregar() }
@@ -55,7 +67,7 @@ export function Painel() {
   }
 
   return (
-    <AppShell semestres={semestres} rotuloSemestre={rotuloSemestre}>
+    <AppShell cursos={cursos} semestres={semestresVisiveis} rotuloSemestre={rotuloSemestre}>
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <div>
@@ -75,19 +87,39 @@ export function Painel() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="filtro-curso" className="label-mono mr-1 text-muted-foreground">Curso</label>
+            <select id="filtro-curso" value={cursoId || ''} onChange={e => setParams(e.target.value ? { curso: e.target.value } : {})} className="input-base w-auto max-w-full">
+              <option value="">Todos os cursos</option>
+              {cursos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+            <button onClick={() => setModal('curso')} className="chip flex items-center gap-1 border-dashed text-primary"><PlusCircle className="size-3.5" /> Curso</button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <span className="label-mono mr-1 text-muted-foreground">Semestre</span>
-            <button onClick={() => setParams({})} className={`chip ${!semestreId ? 'on' : ''}`}>Todos</button>
-            {semestres.map(s => (
-              <button key={s.id} onClick={() => setParams({ semestre: s.id })} className={`chip ${semestreId === s.id ? 'on' : ''}`}>{rotuloSemestre(s)}</button>
+            <button onClick={() => selecionarSemestre(null)} className={`chip ${!semestreId ? 'on' : ''}`}>Todos</button>
+            {semestresVisiveis.map(s => (
+              <button key={s.id} onClick={() => selecionarSemestre(s.id)} className={`chip ${semestreId === s.id ? 'on' : ''}`}>{rotuloSemestre(s)}{!cursoId && ` · ${cursos.find(c => c.id === s.cursoId)?.nome || ''}`}</button>
             ))}
             <button onClick={() => setModal('semestre')} className="chip flex items-center gap-1 border-dashed text-primary"><PlusCircle className="size-3.5" /> Semestre</button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="filtro-disciplina" className="label-mono mr-1 text-muted-foreground">Disciplina</label>
+            <select id="filtro-disciplina" value={disciplinaId || ''} onChange={e => {
+              const next = new URLSearchParams(params)
+              if (e.target.value) next.set('disciplina', e.target.value)
+              else next.delete('disciplina')
+              setParams(next)
+            }} className="input-base w-auto max-w-full">
+              <option value="">Todas as disciplinas</option>
+              {discVisiveis.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <span className="label-mono mr-1 text-muted-foreground">Tipo</span>
             {TIPOS.map(t => <button key={t} onClick={() => setTipo(t)} className={`chip ${tipo === t ? 'on' : ''}`}>{t}</button>)}
             <div className="ml-auto">
-              <Link to="/compartilhar" className="btn btn-secondary"><Upload className="size-4" /> Compartilhar material</Link>
+              <Link to={urlCompartilhar} className="btn btn-secondary"><Upload className="size-4" /> Compartilhar material</Link>
             </div>
           </div>
 
@@ -99,7 +131,7 @@ export function Painel() {
             <div className="card-surface p-8 text-center">
               <p className="font-medium">{materiais.length ? 'Nenhum material encontrado' : 'Ainda não há materiais'}</p>
               <p className="mt-1 text-sm text-muted-foreground">{materiais.length ? 'Tente outro termo ou limpe os filtros.' : 'Seja o primeiro a contribuir com a turma.'}</p>
-              <Link to="/compartilhar" className="btn btn-primary mt-4 inline-flex">Compartilhar material</Link>
+              <Link to={urlCompartilhar} className="btn btn-primary mt-4 inline-flex">Compartilhar material</Link>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
@@ -109,6 +141,8 @@ export function Painel() {
                   material={m}
                   disciplina={discPorId[m.disciplinaId]}
                   semestreIndice={semestreIndicePorDisc[m.disciplinaId]}
+                  semestre={semestres.find(s => s.id === discPorId[m.disciplinaId]?.semestreId)}
+                  cursos={cursos}
                   onVisualizar={setPrevia}
                   onExcluir={excluir}
                 />
@@ -141,8 +175,9 @@ export function Painel() {
       </div>
 
       <VisualizadorMaterial material={previa} disciplina={previa && discPorId[previa.disciplinaId]} onClose={() => setPrevia(null)} onExcluir={excluir} />
-      {modal === 'semestre' && <NovoSemestre onClose={fechar} onSalvo={salvo} />}
-      {modal === 'disciplina' && <NovaDisciplina semestres={semestres} semestreInicial={semestreId} onClose={fechar} onSalvo={salvo} />}
+      {modal === 'curso' && <NovoCurso onClose={fechar} onSalvo={salvo} />}
+      {modal === 'semestre' && <NovoSemestre cursos={cursos} cursoInicial={cursoId} onClose={fechar} onSalvo={salvo} />}
+      {modal === 'disciplina' && <NovaDisciplina cursos={cursos} semestres={semestresVisiveis} semestreInicial={semestreId} onClose={fechar} onSalvo={salvo} />}
     </AppShell>
   )
 }

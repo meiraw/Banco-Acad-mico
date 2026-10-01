@@ -6,12 +6,13 @@ import { iniciais } from '../lib/academico.js'
 
 export function Perfil() {
   const { perfil } = useSessao()
+  const [cursos, setCursos] = useState([])
   const [semestres, setSemestres] = useState([])
 
-  useEffect(() => { api.semestres().then(s => setSemestres(s.sort((a, b) => a.ano - b.ano || a.periodo - b.periodo))).catch(() => {}) }, [])
+  useEffect(() => { Promise.all([api.cursos(), api.semestres()]).then(([c, s]) => { setCursos(c); setSemestres(s) }).catch(() => {}) }, [])
 
   return (
-    <AppShell semestres={semestres} rotuloSemestre={rotuloSemestre}>
+    <AppShell cursos={cursos} semestres={semestres} rotuloSemestre={rotuloSemestre}>
       <h1 className="text-3xl font-bold tracking-tight">Seu perfil</h1>
 
       <div className="card-surface mt-6 flex items-center gap-4 p-6">

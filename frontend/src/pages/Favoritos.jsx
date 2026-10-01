@@ -8,6 +8,7 @@ import { useFavoritos } from '../lib/useFavoritos.js'
 
 export function Favoritos() {
   const { lista } = useFavoritos()
+  const [cursos, setCursos] = useState([])
   const [semestres, setSemestres] = useState([])
   const [disciplinas, setDisciplinas] = useState([])
   const [materiais, setMateriais] = useState([])
@@ -15,8 +16,8 @@ export function Favoritos() {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    Promise.all([api.semestres(), api.disciplinas(), api.materiais()])
-      .then(([s, d, m]) => { setSemestres(s.sort((a, b) => a.ano - b.ano || a.periodo - b.periodo)); setDisciplinas(d); setMateriais(m) })
+    Promise.all([api.cursos(), api.semestres(), api.disciplinas(), api.materiais()])
+      .then(([c, s, d, m]) => { setCursos(c); setSemestres(s); setDisciplinas(d); setMateriais(m) })
       .catch(e => setErro(e.message))
   }, [])
 
@@ -24,7 +25,7 @@ export function Favoritos() {
   const favoritados = materiais.filter(m => lista.has(m.id))
 
   return (
-    <AppShell semestres={semestres} rotuloSemestre={rotuloSemestre}>
+    <AppShell cursos={cursos} semestres={semestres} rotuloSemestre={rotuloSemestre}>
       <h1 className="text-3xl font-bold tracking-tight">Favoritos</h1>
       <p className="mt-1 text-muted-foreground">Materiais que você marcou com o coração ficam guardados aqui, neste navegador.</p>
 
@@ -39,7 +40,7 @@ export function Favoritos() {
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
           {favoritados.map(m => (
-            <MaterialCard key={m.id} material={m} disciplina={discPorId[m.disciplinaId]} onVisualizar={setPrevia} />
+            <MaterialCard key={m.id} material={m} disciplina={discPorId[m.disciplinaId]} cursos={cursos} semestre={semestres.find(s => s.id === discPorId[m.disciplinaId]?.semestreId)} semestreIndice={semestres.findIndex(s => s.id === discPorId[m.disciplinaId]?.semestreId)} onVisualizar={setPrevia} />
           ))}
         </div>
       )}
