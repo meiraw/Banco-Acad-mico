@@ -44,8 +44,9 @@ public class MaterialService {
         // de disciplinas com o materia , então , fazemos a injeção de dependencia de disciplinas
         //depois colocamos a disciplinas no cria() de material
 
-        String nomeArquivo = arquivo.getOriginalFilename(); // Isso defini o nome do arquivo
-        Path caminhoArquivo = uploadPath.resolve(nomeArquivo); // Aqui definimos o caminho para os arquivos // Onde ficará este arquivo especificos
+        String nomeArquivo = arquivo.getOriginalFilename();
+        String nomeUnico = UUID.randomUUID() + "_" + nomeArquivo;
+        Path caminhoArquivo = uploadPath.resolve(nomeUnico);// Aqui definimos o caminho para os arquivos // Onde ficará este arquivo especificos
         System.out.println("ARQUIVO SALVO EM: " + caminhoArquivo.toAbsolutePath());
 
         try { // Tentar
@@ -95,8 +96,18 @@ public class MaterialService {
         return materialRepository.save(novoMaterial);
     }
 
-    public void excluir (UUID id){
+    public void excluir(UUID id){
+
         MaterialModel remover = buscarPorId(id);
+
+        Path caminhoArquivo = Paths.get(remover.getCaminhoArquivo());
+
+        try {
+            Files.deleteIfExists(caminhoArquivo);
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao excluir o arquivo", e);
+        }
+
         materialRepository.delete(remover);
     }
 }

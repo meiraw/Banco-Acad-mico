@@ -24,20 +24,12 @@ public class MaterialRequestDTO {
     private String descricao;
 
 
-    private String nomeArquivo;
-    private String tipoArquivo;
-    private String caminhoArquivo;
-    private Long tamanhoArquivo;
-
     @NotNull
     private UUID disciplinaId;
 
-    public MaterialRequestDTO (String titulo , String descricao,String nomeArquivo, String tipoArquivo , String caminhoArquivo , Long tamanhoArquivo){
+    public MaterialRequestDTO (String titulo , String descricao, UUID disciplinaId){
         this.titulo = titulo;
         this.descricao = descricao;
-        this.nomeArquivo = nomeArquivo;
-        this.caminhoArquivo = caminhoArquivo;
-        this.tamanhoArquivo = tamanhoArquivo;
-        this.tipoArquivo = tipoArquivo;
+        this.disciplinaId = disciplinaId;
     }
 }
