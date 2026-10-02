@@ -27,4 +27,12 @@ public class GlobalExpcetionHandler {
 
             return ResponseEntity.status(400).body(error);
         }
+
+        @ExceptionHandler(RegraNegocioException.class)
+        public ResponseEntity<ErrorResponse> handleRegraNegocio(RegraNegocioException ex) {
+
+            ErrorResponse error = new ErrorResponse(ex.getMessage(), 409);
+
+            return ResponseEntity.status(409).body(error);
+        }
 }
