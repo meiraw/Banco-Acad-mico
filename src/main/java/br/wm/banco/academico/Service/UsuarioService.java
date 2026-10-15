@@ -50,7 +50,6 @@ public class UsuarioService {
         usuario.setPerfil(PerfilUsuario.USER);
 
         UsuarioModel salvo = usuarioRepository.saveAndFlush(usuario);
-        confirmacao.solicitar(salvo.getEmail());
         return salvo;
     }
 
@@ -66,9 +65,6 @@ public class UsuarioService {
             throw new RegraNegocioException("Email ou senha inválidos!");
         }
 
-        if (!usuario.isEmailConfirmado())
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.FORBIDDEN, "Confirme seu e-mail antes de entrar. Você pode solicitar outro link.");
         return usuario;
     }
 
@@ -100,7 +96,6 @@ public class UsuarioService {
         UsuarioModel salvo = usuarioRepository.saveAndFlush(usuario);
         if (mudouEmail) {
             confirmacao.revogarRecuperacoes(salvo.getId());
-            confirmacao.solicitar(salvo.getEmail());
         }
         return salvo;
     }

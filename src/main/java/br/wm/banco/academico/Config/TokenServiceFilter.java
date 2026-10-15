@@ -34,7 +34,6 @@ public class TokenServiceFilter extends OncePerRequestFilter {
                 var usuario = usuarios.findByEmail(email)
                         .orElseThrow(() -> new JWTVerificationException("Usuario inexistente"));
                 tokens.validarVersao(header.substring(7), usuario);
-                if (!usuario.isEmailConfirmado()) throw new JWTVerificationException("E-mail não confirmado");
                 // O perfil atual do banco e a fonte de autoridade.
                 var authentication = new UsernamePasswordAuthenticationToken(usuario.getEmail(), null,
                         List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getPerfil().name())));

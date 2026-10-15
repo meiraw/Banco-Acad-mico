@@ -63,8 +63,9 @@ class AuthenticationTests {
         @Bean br.wm.banco.academico.Service.MaterialService materiais() {
             return mock(br.wm.banco.academico.Service.MaterialService.class);
         }
-        @Bean UsuarioService service(UsuarioRepository repo, PasswordEncoder encoder) {
-            return new UsuarioService(repo, encoder, mock(br.wm.banco.academico.Service.ConfirmacaoEmailService.class));
+        @Bean UsuarioService service(UsuarioRepository repo, PasswordEncoder encoder,
+                br.wm.banco.academico.Service.ConfirmacaoEmailService confirmacao) {
+            return new UsuarioService(repo, encoder, confirmacao);
         }
     }
     @Autowired WebApplicationContext context;
@@ -75,6 +76,7 @@ class AuthenticationTests {
     UsuarioModel usuario;
     @BeforeEach void setup() {
         reset(usuarios);
+        reset(context.getBean(br.wm.banco.academico.Service.ConfirmacaoEmailService.class));
         reset(context.getBean(br.wm.banco.academico.Service.RecuperacaoLimiteService.class));
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         usuario = new UsuarioModel();
@@ -90,6 +92,22 @@ class AuthenticationTests {
                 .andExpect(status().isCreated()).andExpect(jsonPath("senha").doesNotExist());
         verify(usuarios).saveAndFlush(argThat(u -> !u.isEmailConfirmado() && u.getPerfil() == PerfilUsuario.USER
                 && encoder.matches("Senha123!", u.getSenha()) && !u.getSenha().equals("Senha123!")));
+    }
+    @Test void cadastroELoginAceitamDiferentesProvedoresSemEnviarEmail() throws Exception {
+        when(usuarios.saveAndFlush(any())).thenAnswer(inv -> {
+            UsuarioModel salvo = inv.getArgument(0);
+            when(usuarios.findByEmail(salvo.getEmail())).thenReturn(Optional.of(salvo));
+            return salvo;
+        });
+        for (String email : new String[]{"novo@gmail.com", "novo@outlook.com", "novo@unemat.br"}) {
+            mvc.perform(post("/usuario").contentType("application/json")
+                    .content("{\"nome\":\"Novo\",\"email\":\"" + email + "\",\"senha\":\"Senha123!\"}"))
+                    .andExpect(status().isCreated());
+            mvc.perform(post("/auth/login").contentType("application/json")
+                    .content("{\"email\":\"" + email + "\",\"senha\":\"Senha123!\"}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("token").isString());
+        }
+        verifyNoInteractions(context.getBean(br.wm.banco.academico.Service.ConfirmacaoEmailService.class));
     }
     @Test void cadastroDuplicadoEInvalido() throws Exception {
         mvc.perform(post("/usuario").contentType("application/json")
@@ -109,13 +127,13 @@ class AuthenticationTests {
         assertEquals("USER", JWT.decode(token).getClaim("perfil").asString());
         assertTrue(JWT.decode(token).getExpiresAtAsInstant().isAfter(Instant.now()));
     }
-    @Test void contaPendenteNaoEntraNemUsaJwt() throws Exception {
+    @Test void loginNaoExigeConfirmacaoDeEmail() throws Exception {
         usuario.setEmailConfirmado(false);
         mvc.perform(post("/auth/login").contentType("application/json")
                 .content("{\"email\":\"teste@unemat.br\",\"senha\":\"Senha123!\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
         mvc.perform(get("/usuario").header("Authorization", "Bearer " + tokens.gerarToken(usuario)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
     @Test void confirmacaoPublicaComValidacaoELimite() throws Exception {
         var limites = context.getBean(br.wm.banco.academico.Service.RecuperacaoLimiteService.class);

@@ -1,9 +1,8 @@
-/** Aceita e-mails @unemat.br (e subdomínios) ou qualquer domínio contendo "unemat". */
-export function isEmailInstitucional(email) {
+/** Valida o formato do endereço sem restringir o provedor. Não comprova existência. */
+export function isEmailValido(email) {
   const valor = email.trim().toLowerCase()
   if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(valor)) return false
-  const dominio = valor.split('@')[1] ?? ''
-  return dominio.includes('unemat')
+  return true
 }
 
 export function avaliarSenha(senha) {

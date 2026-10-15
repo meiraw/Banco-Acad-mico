@@ -1,5 +1,7 @@
 # Confirmação de e-mail
 
+> Configuração atual: cadastro e login aceitam endereços de qualquer provedor e não exigem confirmação por e-mail nem envio SMTP. O cadastro entra diretamente após criar a conta. A validação de formato não comprova a existência do endereço. Os componentes de confirmação descritos abaixo permanecem disponíveis, mas não são acionados pelo cadastro nem bloqueiam o acesso. SMTP só é necessário para enviar mensagens, como na recuperação de senha. Não é necessário ativar o perfil gmail para cadastro e login; se foi ativado apenas para isso, remova gmail de SPRING_PROFILES_ACTIVE.
+
 Novos cadastros precisam confirmar a posse do e-mail antes do login. A senha é exclusiva do Banco Acadêmico; nunca se pede a senha da caixa de entrada do usuário. A restrição institucional da interface continua existente.
 
 ## Configuração
