@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { GraduationCap, Mail, User, ArrowRight, ArrowLeft, MailCheck } from 'lucide-react'
 import { CampoSenha } from '../components/CampoSenha.jsx'
 import { ThemeToggle } from '../components/ThemeToggle.jsx'
@@ -9,8 +9,10 @@ import { api } from '../lib/api.js'
 
 export function Auth() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { entrar } = useSessao()
-  const [aba, setAba] = useState('login')
+  // A tela de redefinicao pode mandar o usuario direto para "Recuperar acesso" ao pedir um novo link.
+  const [aba, setAba] = useState(location.state?.aba === 'recuperar' ? 'recuperar' : 'login')
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -26,7 +28,15 @@ export function Auth() {
       setErro('Use seu e-mail institucional da UNEMAT (ex.: nome.sobrenome@unemat.br).')
       return
     }
-    if (aba === 'recuperar') { setErro('Recuperação de senha ainda indisponível.'); return }
+    if (aba === 'recuperar') {
+      try {
+        setEnviando(true)
+        await api.esqueciSenha(email.trim().toLowerCase())
+        setEmailEnviado(true) // A resposta e sempre generica: nao revela se a conta existe.
+      } catch (error) { setErro(error.status === 429 ? 'Muitas tentativas. Aguarde até 15 minutos e tente de novo.' : error.message) }
+      finally { setEnviando(false) }
+      return
+    }
     if (senha.length < 6) { setErro('A senha precisa ter pelo menos 6 caracteres.'); return }
     if (aba === 'cadastro') {
       if (senha.length < 8) { setErro('A senha precisa ter pelo menos 8 caracteres.'); return }
@@ -80,10 +90,10 @@ export function Auth() {
             <div>
               <h1 className="text-xl font-semibold">Verifique seu e-mail</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Se houver uma conta para <span className="font-medium text-foreground">{email.trim().toLowerCase()}</span>, enviamos um link de redefinição.
+                Se houver uma conta para <span className="font-medium text-foreground">{email.trim().toLowerCase()}</span>, enviamos um link de redefinição. O link vale por 15 minutos e só pode ser usado uma vez.
               </p>
             </div>
-            <button className="btn btn-outline w-full" onClick={() => { setEmailEnviado(false); setAba('login') }}>
+            <button className="btn btn-outline w-full" onClick={() => { setEmailEnviado(false); setAba('login'); setErro('') }}>
               <ArrowLeft className="size-4" /> Voltar para o login
             </button>
           </div>
@@ -128,12 +138,12 @@ export function Auth() {
             </button>
 
             {aba === 'login' && (
-              <button type="button" onClick={() => setAba('recuperar')} className="label-mono block w-full text-center text-muted-foreground transition-colors hover:text-primary">
+              <button type="button" onClick={() => { setAba('recuperar'); setErro('') }} className="label-mono block w-full text-center text-muted-foreground transition-colors hover:text-primary">
                 Esqueci minha senha
               </button>
             )}
             {aba === 'recuperar' && (
-              <button type="button" onClick={() => setAba('login')} className="label-mono flex w-full items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-primary">
+              <button type="button" onClick={() => { setAba('login'); setErro('') }} className="label-mono flex w-full items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-primary">
                 <ArrowLeft className="size-3.5" /> Voltar para o login
               </button>
             )}
