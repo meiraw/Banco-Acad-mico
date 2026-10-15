@@ -3,6 +3,7 @@ import { SessaoProvider } from './lib/sessao.jsx'
 import { RequireAuth } from './components/RequireAuth.jsx'
 import { Home } from './pages/Home.jsx'
 import { Auth } from './pages/Auth.jsx'
+import { RedefinirSenha } from './pages/RedefinirSenha.jsx'
 import { Painel } from './pages/Painel.jsx'
 import { Compartilhar } from './pages/Compartilhar.jsx'
 import { Favoritos } from './pages/Favoritos.jsx'
@@ -18,6 +19,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/termos" element={<Termos />} />
           <Route path="/painel" element={<RequireAuth><Painel /></RequireAuth>} />

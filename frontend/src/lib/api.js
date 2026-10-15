@@ -1,7 +1,9 @@
 const BASE = '/api'
 
-async function req(path, opts) {
-  const token = sessionStorage.getItem('banco-academico:token')
+async function req(path, { publico, ...opts } = {}) {
+  // Rotas publicas (ex.: recuperacao de senha) nao enviam Authorization: o backend rejeita
+  // qualquer JWT invalido ou antigo presente no cabecalho, mesmo nessas rotas.
+  const token = publico ? null : sessionStorage.getItem('banco-academico:token')
   opts = { ...opts, headers: { ...opts?.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
   let res
   try { res = await fetch(BASE + path, opts) }
@@ -9,7 +11,7 @@ async function req(path, opts) {
   if (!res.ok) {
     let msg = `Erro ${res.status}`
     try { msg = (await res.json()).mensagem || msg } catch { /* corpo vazio */ }
-    throw new Error(msg)
+    throw Object.assign(new Error(msg), { status: res.status })
   }
   return res.status === 204 ? null : res.json()
 }
@@ -20,6 +22,8 @@ const lista = p => req(`${p}?size=500`).then(page => page.content)
 export const api = {
   cadastrar: d => req('/usuario', { method: 'POST', ...json(d) }),
   login: d => req('/auth/login', { method: 'POST', ...json(d) }),
+  esqueciSenha: email => req('/auth/esqueci-senha', { method: 'POST', publico: true, ...json({ email }) }),
+  redefinirSenha: (token, novaSenha) => req('/auth/redefinir-senha', { method: 'POST', publico: true, ...json({ token, novaSenha }) }),
   cursos: () => req('/curso'),
   semestres: () => req('/semestres').then(s => s.sort((a, b) => a.numero - b.numero || a.nome.localeCompare(b.nome))),
   criarCurso: d => req('/curso', { method: 'POST', ...json(d) }),
