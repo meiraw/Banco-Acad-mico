@@ -37,3 +37,4 @@ build/
 ### Frontend ###
 node_modules/
 frontend/dist/
+Uploads/
