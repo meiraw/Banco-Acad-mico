@@ -45,8 +45,15 @@ class AuthenticationTests {
     @org.springframework.data.web.config.EnableSpringDataWebSupport
     @org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
     @Import({SecurityConfig.class, AuthController.class, UsuarioController.class, GlobalExpcetionHandler.class,
+            br.wm.banco.academico.Controller.RecuperacaoSenhaController.class,
             br.wm.banco.academico.Controller.MaterialController.class})
     static class Config {
+        @Bean br.wm.banco.academico.Service.RecuperacaoSenhaService recuperacao() {
+            return mock(br.wm.banco.academico.Service.RecuperacaoSenhaService.class);
+        }
+        @Bean br.wm.banco.academico.Service.RecuperacaoLimiteService limites() {
+            return mock(br.wm.banco.academico.Service.RecuperacaoLimiteService.class);
+        }
         @Bean UsuarioRepository usuarios() { return mock(UsuarioRepository.class); }
         @Bean TokenService tokens() { return new TokenService(SECRET); }
         @Bean br.wm.banco.academico.Service.MaterialService materiais() {
@@ -126,6 +133,22 @@ class AuthenticationTests {
         mvc.perform(get("/usuario").header("Authorization", "Bearer " + token)).andExpect(status().isOk());
         when(usuarios.findByEmail(usuario.getEmail())).thenReturn(Optional.empty());
         mvc.perform(get("/usuario").header("Authorization", "Bearer " + token)).andExpect(status().isUnauthorized());
+    }
+    @Test void recuperacaoPublicaEJwtAnteriorRevogado() throws Exception {
+        var limites = context.getBean(br.wm.banco.academico.Service.RecuperacaoLimiteService.class);
+        when(limites.permitir(anyString(), anyInt())).thenReturn(true);
+        mvc.perform(post("/auth/esqueci-senha").contentType("application/json")
+                .content("{\"email\":\"teste@unemat.br\"}")).andExpect(status().isOk());
+        mvc.perform(post("/auth/redefinir-senha").contentType("application/json")
+                .content("{\"token\":\"" + "A".repeat(43) + "\",\"novaSenha\":\"NovaSenha123!\"}"))
+                .andExpect(status().isOk());
+        String anterior = tokens.gerarToken(usuario);
+        String legado = assinar("banco-academico", SECRET, Instant.now().plusSeconds(60));
+        usuario.setVersaoCredenciais(1);
+        mvc.perform(get("/usuario").header("Authorization", "Bearer " + anterior)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/usuario").header("Authorization", "Bearer " + legado)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/usuario").header("Authorization", "Bearer " + tokens.gerarToken(usuario)))
+                .andExpect(status().isForbidden());
     }
     @Test void corsPreflight() throws Exception {
         mvc.perform(options("/usuario").header("Origin", "http://localhost:5173")

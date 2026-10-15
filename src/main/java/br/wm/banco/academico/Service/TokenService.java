@@ -32,6 +32,13 @@ public class TokenService {
         return email;
     }
 
+    public void validarVersao(String token, UsuarioModel usuario) {
+        Long versao = verifier.verify(token).getClaim("vc").asLong();
+        // JWTs legados sem versão correspondem à versão inicial zero.
+        if ((versao == null ? 0L : versao) != usuario.getVersaoCredenciais())
+            throw new com.auth0.jwt.exceptions.JWTVerificationException("Credenciais alteradas");
+    }
+
     public String gerarToken(UsuarioModel usuario) {
 
 
@@ -39,6 +46,7 @@ public class TokenService {
                 .withIssuer("banco-academico")
                 .withSubject(usuario.getEmail())
                 .withClaim("perfil", usuario.getPerfil().name())
+                .withClaim("vc", usuario.getVersaoCredenciais())
                 .withExpiresAt(
                         Instant.now().plus(2, ChronoUnit.HOURS)
                 )

@@ -31,7 +31,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint((req, res, ex) -> SecurityResponse.write(res, 401))
                         .accessDeniedHandler((req, res, ex) -> SecurityResponse.write(res, 403)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/auth/login", "/usuario").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/esqueci-senha", "/auth/redefinir-senha", "/usuario").permitAll()
                         .requestMatchers("/usuario", "/usuario/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/curso", "/curso/**", "/semestres", "/semestres/**",
                                 "/disciplinas", "/disciplinas/**", "/material", "/material/**").permitAll()

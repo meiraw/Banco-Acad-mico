@@ -7,6 +7,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExpcetionHandler {
+        @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+        public ResponseEntity<ErrorResponse> handleStatus(org.springframework.web.server.ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode())
+                .body(new ErrorResponse(ex.getReason(), ex.getStatusCode().value()));
+        }
+
 
         @ExceptionHandler(ResourceNotFoundException.class)
         public ResponseEntity<ErrorResponse> handlerNotFound(ResourceNotFoundException ex){

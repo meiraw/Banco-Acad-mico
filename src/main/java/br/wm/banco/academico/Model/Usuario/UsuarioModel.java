@@ -15,6 +15,10 @@ import java.util.UUID;
 @Table(name = "usuarios")
 public class UsuarioModel {
 
+    @Setter
+    @Column(name = "versao_credenciais", nullable = false)
+    private long versaoCredenciais;
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
