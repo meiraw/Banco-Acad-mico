@@ -16,6 +16,10 @@ import java.util.UUID;
 public class UsuarioModel {
 
     @Setter
+    @Column(name = "email_confirmado", nullable = false)
+    private boolean emailConfirmado;
+
+    @Setter
     @Column(name = "versao_credenciais", nullable = false)
     private long versaoCredenciais;
 

@@ -45,9 +45,13 @@ class AuthenticationTests {
     @org.springframework.data.web.config.EnableSpringDataWebSupport
     @org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
     @Import({SecurityConfig.class, AuthController.class, UsuarioController.class, GlobalExpcetionHandler.class,
+            br.wm.banco.academico.Controller.ConfirmacaoEmailController.class,
             br.wm.banco.academico.Controller.RecuperacaoSenhaController.class,
             br.wm.banco.academico.Controller.MaterialController.class})
     static class Config {
+        @Bean br.wm.banco.academico.Service.ConfirmacaoEmailService confirmacao() {
+            return mock(br.wm.banco.academico.Service.ConfirmacaoEmailService.class);
+        }
         @Bean br.wm.banco.academico.Service.RecuperacaoSenhaService recuperacao() {
             return mock(br.wm.banco.academico.Service.RecuperacaoSenhaService.class);
         }
@@ -60,7 +64,7 @@ class AuthenticationTests {
             return mock(br.wm.banco.academico.Service.MaterialService.class);
         }
         @Bean UsuarioService service(UsuarioRepository repo, PasswordEncoder encoder) {
-            return new UsuarioService(repo, encoder);
+            return new UsuarioService(repo, encoder, mock(br.wm.banco.academico.Service.ConfirmacaoEmailService.class));
         }
     }
     @Autowired WebApplicationContext context;
@@ -71,18 +75,20 @@ class AuthenticationTests {
     UsuarioModel usuario;
     @BeforeEach void setup() {
         reset(usuarios);
+        reset(context.getBean(br.wm.banco.academico.Service.RecuperacaoLimiteService.class));
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         usuario = new UsuarioModel();
+        usuario.setEmailConfirmado(true);
         usuario.setNome("Teste"); usuario.setEmail("teste@unemat.br");
         usuario.setSenha(encoder.encode("Senha123!")); usuario.setPerfil(PerfilUsuario.USER);
         when(usuarios.findByEmail(usuario.getEmail())).thenReturn(Optional.of(usuario));
     }
     @Test void cadastroPreservaBcryptEPerfilUser() throws Exception {
-        when(usuarios.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(usuarios.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
         mvc.perform(post("/usuario").contentType("application/json")
                 .content("{\"nome\":\"Novo\",\"email\":\"novo@unemat.br\",\"senha\":\"Senha123!\",\"perfil\":\"ADMIN\"}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("senha").doesNotExist());
-        verify(usuarios).save(argThat(u -> u.getPerfil() == PerfilUsuario.USER
+        verify(usuarios).saveAndFlush(argThat(u -> !u.isEmailConfirmado() && u.getPerfil() == PerfilUsuario.USER
                 && encoder.matches("Senha123!", u.getSenha()) && !u.getSenha().equals("Senha123!")));
     }
     @Test void cadastroDuplicadoEInvalido() throws Exception {
@@ -102,6 +108,31 @@ class AuthenticationTests {
         assertEquals(usuario.getEmail(), tokens.validarToken(token));
         assertEquals("USER", JWT.decode(token).getClaim("perfil").asString());
         assertTrue(JWT.decode(token).getExpiresAtAsInstant().isAfter(Instant.now()));
+    }
+    @Test void contaPendenteNaoEntraNemUsaJwt() throws Exception {
+        usuario.setEmailConfirmado(false);
+        mvc.perform(post("/auth/login").contentType("application/json")
+                .content("{\"email\":\"teste@unemat.br\",\"senha\":\"Senha123!\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/usuario").header("Authorization", "Bearer " + tokens.gerarToken(usuario)))
+                .andExpect(status().isUnauthorized());
+    }
+    @Test void confirmacaoPublicaComValidacaoELimite() throws Exception {
+        var limites = context.getBean(br.wm.banco.academico.Service.RecuperacaoLimiteService.class);
+        when(limites.permitir(anyString(), anyInt())).thenReturn(true);
+        mvc.perform(post("/auth/confirmar-email").contentType("application/json")
+                .content("{\"token\":\"" + "A".repeat(43) + "\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(post("/auth/reenviar-confirmacao").contentType("application/json")
+                .content("{\"email\":\"teste@unemat.br\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(post("/auth/confirmar-email").contentType("application/json")
+                .content("{\"token\":\"curto\"}"))
+                .andExpect(status().isBadRequest());
+        when(limites.permitir(anyString(), anyInt())).thenReturn(false);
+        mvc.perform(post("/auth/reenviar-confirmacao").contentType("application/json")
+                .content("{\"email\":\"teste@unemat.br\"}"))
+                .andExpect(status().isTooManyRequests());
     }
     @Test void loginRejeitaCredenciaisInvalidas() throws Exception {
         for (String email : new String[]{"teste@unemat.br", "ausente@unemat.br"}) {

@@ -20,8 +20,10 @@ const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: J
 const lista = p => req(`${p}?size=500`).then(page => page.content)
 
 export const api = {
-  cadastrar: d => req('/usuario', { method: 'POST', ...json(d) }),
-  login: d => req('/auth/login', { method: 'POST', ...json(d) }),
+  cadastrar: d => req('/usuario', { method: 'POST', publico: true, ...json(d) }),
+  login: d => req('/auth/login', { method: 'POST', publico: true, ...json(d) }),
+  confirmarEmail: token => req('/auth/confirmar-email', { method: 'POST', publico: true, ...json({ token }) }),
+  reenviarConfirmacao: email => req('/auth/reenviar-confirmacao', { method: 'POST', publico: true, ...json({ email }) }),
   esqueciSenha: email => req('/auth/esqueci-senha', { method: 'POST', publico: true, ...json({ email }) }),
   redefinirSenha: (token, novaSenha) => req('/auth/redefinir-senha', { method: 'POST', publico: true, ...json({ token, novaSenha }) }),
   cursos: () => req('/curso'),

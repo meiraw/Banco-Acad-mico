@@ -62,7 +62,8 @@ class RecuperacaoSenhaTests {
   assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM recuperacoes_senha", Integer.class));
   assertThrows(ResponseStatusException.class, () -> service.redefinir(usado, "Outra123!"));
   assertThrows(ResponseStatusException.class, () -> service.redefinir("B".repeat(43), "Outra123!"));
-  UsuarioService login = new UsuarioService(usuarios, encoder);
+  usuario.setEmailConfirmado(true);
+  UsuarioService login = new UsuarioService(usuarios, encoder, mock(ConfirmacaoEmailService.class));
   LoginRequestDTO dto = new LoginRequestDTO();
   ReflectionTestUtils.setField(dto, "email", usuario.getEmail());
   ReflectionTestUtils.setField(dto, "senha", "NovaSenha123!");

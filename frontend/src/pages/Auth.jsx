@@ -19,6 +19,19 @@ export function Auth() {
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [emailEnviado, setEmailEnviado] = useState(false)
+  const [aviso, setAviso] = useState('')
+
+  async function reenviarConfirmacao() {
+    if (enviando) return
+    if (!isEmailInstitucional(email)) { setErro('Informe seu e-mail institucional.'); return }
+    setEnviando(true)
+    setErro('')
+    try {
+      const resposta = await api.reenviarConfirmacao(email.trim().toLowerCase())
+      setAviso(resposta.mensagem)
+    } catch (error) { setErro(error.message) }
+    finally { setEnviando(false) }
+  }
 
   async function enviar(e) {
     e.preventDefault()
@@ -46,7 +59,13 @@ export function Auth() {
     try {
       setEnviando(true)
       const dados = { email: email.trim().toLowerCase(), senha }
-      if (aba === 'cadastro') await api.cadastrar({ ...dados, nome: nome.trim() })
+      if (aba === 'cadastro') {
+        await api.cadastrar({ ...dados, nome: nome.trim() })
+        setSenha('')
+        setAba('login')
+        setAviso('Conta criada. Verifique seu e-mail e confirme sua conta antes de entrar. Se o link não chegar, solicite outro abaixo.')
+        return
+      }
       const { token } = await api.login(dados)
       entrar({ nome: nome.trim() || dados.email.split('@')[0], email: dados.email, token })
       navigate('/painel', { replace: true })
@@ -73,7 +92,7 @@ export function Auth() {
             {['login', 'cadastro'].map(t => (
               <button
                 key={t}
-                onClick={() => { setAba(t); setErro('') }}
+                onClick={() => { setAba(t); setErro(''); setAviso('') }}
                 className={`label-mono -mb-px border-b-2 pb-3 font-medium transition-colors ${
                   aba === t ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
@@ -131,12 +150,18 @@ export function Auth() {
             )}
 
             {erro && <p className="text-sm text-destructive" role="alert">{erro}</p>}
+            {aviso && <p className="text-sm text-muted-foreground" role="status">{aviso}</p>}
 
             <button type="submit" disabled={enviando} className="btn btn-primary w-full">
               {aba === 'login' ? 'Entrar no portal' : aba === 'cadastro' ? 'Criar conta' : 'Enviar link de redefinição'}
               <ArrowRight className="size-4" />
             </button>
 
+            {aba === 'login' && (
+              <button type="button" disabled={enviando} onClick={reenviarConfirmacao} className="label-mono block w-full text-center text-primary">
+                Reenviar confirmação de e-mail
+              </button>
+            )}
             {aba === 'login' && (
               <button type="button" onClick={() => { setAba('recuperar'); setErro('') }} className="label-mono block w-full text-center text-muted-foreground transition-colors hover:text-primary">
                 Esqueci minha senha
