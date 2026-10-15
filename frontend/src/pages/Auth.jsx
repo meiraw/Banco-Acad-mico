@@ -5,6 +5,7 @@ import { CampoSenha } from '../components/CampoSenha.jsx'
 import { ThemeToggle } from '../components/ThemeToggle.jsx'
 import { isEmailInstitucional, avaliarSenha } from '../lib/academico.js'
 import { useSessao } from '../lib/sessao.jsx'
+import { api } from '../lib/api.js'
 
 export function Auth() {
   const navigate = useNavigate()
@@ -14,23 +15,33 @@ export function Auth() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
+  const [enviando, setEnviando] = useState(false)
   const [emailEnviado, setEmailEnviado] = useState(false)
 
-  function enviar(e) {
+  async function enviar(e) {
     e.preventDefault()
+    if (enviando) return
     setErro('')
     if (!isEmailInstitucional(email)) {
       setErro('Use seu e-mail institucional da UNEMAT (ex.: nome.sobrenome@unemat.br).')
       return
     }
-    if (aba === 'recuperar') { setEmailEnviado(true); return }
+    if (aba === 'recuperar') { setErro('Recuperação de senha ainda indisponível.'); return }
     if (senha.length < 6) { setErro('A senha precisa ter pelo menos 6 caracteres.'); return }
     if (aba === 'cadastro') {
+      if (senha.length < 8) { setErro('A senha precisa ter pelo menos 8 caracteres.'); return }
       if (nome.trim().length < 3) { setErro('Informe seu nome completo.'); return }
       if (avaliarSenha(senha).nivel < 2) { setErro('Fortaleça sua senha: inclua números e caracteres especiais.'); return }
     }
-    entrar({ nome: aba === 'cadastro' ? nome.trim() : nome.trim() || email.split('@')[0], email: email.trim().toLowerCase() })
-    navigate('/painel', { replace: true })
+    try {
+      setEnviando(true)
+      const dados = { email: email.trim().toLowerCase(), senha }
+      if (aba === 'cadastro') await api.cadastrar({ ...dados, nome: nome.trim() })
+      const { token } = await api.login(dados)
+      entrar({ nome: nome.trim() || dados.email.split('@')[0], email: dados.email, token })
+      navigate('/painel', { replace: true })
+    } catch (error) { setErro(error.message) }
+    finally { setEnviando(false) }
   }
 
   return (
@@ -111,7 +122,7 @@ export function Auth() {
 
             {erro && <p className="text-sm text-destructive" role="alert">{erro}</p>}
 
-            <button type="submit" className="btn btn-primary w-full">
+            <button type="submit" disabled={enviando} className="btn btn-primary w-full">
               {aba === 'login' ? 'Entrar no portal' : aba === 'cadastro' ? 'Criar conta' : 'Enviar link de redefinição'}
               <ArrowRight className="size-4" />
             </button>

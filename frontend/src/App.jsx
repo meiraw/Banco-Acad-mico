@@ -24,7 +24,7 @@ export default function App() {
           <Route path="/compartilhar" element={<RequireAuth><Compartilhar /></RequireAuth>} />
           <Route path="/favoritos" element={<RequireAuth><Favoritos /></RequireAuth>} />
           <Route path="/perfil" element={<RequireAuth><Perfil /></RequireAuth>} />
-          <Route path="/admin" element={<RequireAuth><Admin /></RequireAuth>} />
+          <Route path="/admin" element={<RequireAuth admin><Admin /></RequireAuth>} />
           <Route path="*" element={<Home />} />
         </Routes>
       </BrowserRouter>

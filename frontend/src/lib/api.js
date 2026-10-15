@@ -1,6 +1,8 @@
 const BASE = '/api'
 
 async function req(path, opts) {
+  const token = sessionStorage.getItem('banco-academico:token')
+  opts = { ...opts, headers: { ...opts?.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
   let res
   try { res = await fetch(BASE + path, opts) }
   catch { throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando.') }
@@ -16,6 +18,8 @@ const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: J
 const lista = p => req(`${p}?size=500`).then(page => page.content)
 
 export const api = {
+  cadastrar: d => req('/usuario', { method: 'POST', ...json(d) }),
+  login: d => req('/auth/login', { method: 'POST', ...json(d) }),
   cursos: () => req('/curso'),
   semestres: () => req('/semestres').then(s => s.sort((a, b) => a.numero - b.numero || a.nome.localeCompare(b.nome))),
   criarCurso: d => req('/curso', { method: 'POST', ...json(d) }),
