@@ -57,10 +57,11 @@ export function Painel() {
 
   const urlCompartilhar = `/compartilhar?${new URLSearchParams({ ...(cursoId ? { curso: cursoId } : {}), ...(semestreId ? { semestre: semestreId } : {}) })}`
   const primeiroNome = perfil?.nome?.split(' ')[0] ?? 'Acadêmico'
-  // Curso, semestre e disciplina só são criados no painel administrativo.
+  // Curso, semestre e disciplina só são criados, e materiais só são excluídos, por administradores.
   const ehAdmin = perfil?.perfil === 'ADMIN'
 
   async function excluir(m) {
+    if (!ehAdmin) return
     try { await api.excluirMaterial(m.id); setPrevia(null); carregar() } catch (e) { setErro(e.message) }
   }
 
@@ -140,7 +141,7 @@ export function Painel() {
                   semestre={semestres.find(s => s.id === discPorId[m.disciplinaId]?.semestreId)}
                   cursos={cursos}
                   onVisualizar={setPrevia}
-                  onExcluir={excluir}
+                  onExcluir={ehAdmin ? excluir : undefined}
                 />
               ))}
             </div>
@@ -170,7 +171,7 @@ export function Painel() {
         </aside>
       </div>
 
-      <VisualizadorMaterial material={previa} disciplina={previa && discPorId[previa.disciplinaId]} onClose={() => setPrevia(null)} onExcluir={excluir} />
+      <VisualizadorMaterial material={previa} disciplina={previa && discPorId[previa.disciplinaId]} onClose={() => setPrevia(null)} onExcluir={ehAdmin ? excluir : undefined} />
     </AppShell>
   )
 }
