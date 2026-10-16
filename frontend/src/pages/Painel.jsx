@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { Search, Sparkles, Upload, ChevronRight, Star, PlusCircle } from 'lucide-react'
+import { Search, Sparkles, Upload, ChevronRight, Star, ShieldCheck } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
 import { MaterialCard } from '../components/MaterialCard.jsx'
 import { VisualizadorMaterial } from '../components/VisualizadorMaterial.jsx'
-import { NovoCurso, NovoSemestre, NovaDisciplina } from '../components/Gerenciar.jsx'
 import { api, categoria, rotuloSemestre } from '../lib/api.js'
 import { useSessao } from '../lib/sessao.jsx'
 
@@ -26,7 +25,6 @@ export function Painel() {
   const [termo, setTermo] = useState('')
   const [tipo, setTipo] = useState('Todos')
   const [previa, setPrevia] = useState(null)
-  const [modal, setModal] = useState(null)
 
   async function carregar() {
     try {
@@ -59,10 +57,11 @@ export function Painel() {
 
   const urlCompartilhar = `/compartilhar?${new URLSearchParams({ ...(cursoId ? { curso: cursoId } : {}), ...(semestreId ? { semestre: semestreId } : {}) })}`
   const primeiroNome = perfil?.nome?.split(' ')[0] ?? 'Acadêmico'
-  const fechar = () => setModal(null)
-  const salvo = () => { fechar(); carregar() }
+  // Curso, semestre e disciplina só são criados, e materiais só são excluídos, por administradores.
+  const ehAdmin = perfil?.perfil === 'ADMIN'
 
   async function excluir(m) {
+    if (!ehAdmin) return
     try { await api.excluirMaterial(m.id); setPrevia(null); carregar() } catch (e) { setErro(e.message) }
   }
 
@@ -92,7 +91,6 @@ export function Painel() {
               <option value="">Todos os cursos</option>
               {cursos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
-            <button onClick={() => setModal('curso')} className="chip flex items-center gap-1 border-dashed text-primary"><PlusCircle className="size-3.5" /> Curso</button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="label-mono mr-1 text-muted-foreground">Semestre</span>
@@ -100,7 +98,6 @@ export function Painel() {
             {semestresVisiveis.map(s => (
               <button key={s.id} onClick={() => selecionarSemestre(s.id)} className={`chip ${semestreId === s.id ? 'on' : ''}`}>{rotuloSemestre(s)}{!cursoId && ` · ${cursos.find(c => c.id === s.cursoId)?.nome || ''}`}</button>
             ))}
-            <button onClick={() => setModal('semestre')} className="chip flex items-center gap-1 border-dashed text-primary"><PlusCircle className="size-3.5" /> Semestre</button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -144,7 +141,7 @@ export function Painel() {
                   semestre={semestres.find(s => s.id === discPorId[m.disciplinaId]?.semestreId)}
                   cursos={cursos}
                   onVisualizar={setPrevia}
-                  onExcluir={excluir}
+                  onExcluir={ehAdmin ? excluir : undefined}
                 />
               ))}
             </div>
@@ -169,15 +166,12 @@ export function Painel() {
               ))}
               {!discVisiveis.length && <p className="text-sm text-muted-foreground">Nenhuma disciplina cadastrada ainda.</p>}
             </div>
-            <button onClick={() => setModal('disciplina')} className="btn btn-outline mt-3 w-full"><PlusCircle className="size-4" /> Nova disciplina</button>
+            {ehAdmin && <Link to="/admin" className="btn btn-outline mt-3 w-full"><ShieldCheck className="size-4" /> Gerenciar grade curricular</Link>}
           </section>
         </aside>
       </div>
 
-      <VisualizadorMaterial material={previa} disciplina={previa && discPorId[previa.disciplinaId]} onClose={() => setPrevia(null)} onExcluir={excluir} />
-      {modal === 'curso' && <NovoCurso onClose={fechar} onSalvo={salvo} />}
-      {modal === 'semestre' && <NovoSemestre cursos={cursos} cursoInicial={cursoId} onClose={fechar} onSalvo={salvo} />}
-      {modal === 'disciplina' && <NovaDisciplina cursos={cursos} semestres={semestresVisiveis} semestreInicial={semestreId} onClose={fechar} onSalvo={salvo} />}
+      <VisualizadorMaterial material={previa} disciplina={previa && discPorId[previa.disciplinaId]} onClose={() => setPrevia(null)} onExcluir={ehAdmin ? excluir : undefined} />
     </AppShell>
   )
 }

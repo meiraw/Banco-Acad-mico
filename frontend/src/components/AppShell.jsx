@@ -8,6 +8,7 @@ export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children
   const { perfil, sair } = useSessao()
   const navigate = useNavigate()
   const location = useLocation()
+  const ehAdmin = perfil?.perfil === 'ADMIN'
 
   function sairEVoltar() {
     sair()
@@ -24,7 +25,7 @@ export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children
           </Link>
           <div className="flex-1" />
           <ThemeToggle />
-          <Link to="/admin" className="btn btn-ghost" aria-label="Painel administrativo"><ShieldCheck className="size-4" /><span className="hidden sm:inline">Admin</span></Link>
+          {ehAdmin && <Link to="/admin" className="btn btn-ghost" aria-label="Painel administrativo"><ShieldCheck className="size-4" /><span className="hidden sm:inline">Admin</span></Link>}
           <Link to="/perfil" className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold leading-tight">{perfil?.nome ?? 'Acadêmico'}</p>
@@ -62,9 +63,11 @@ export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children
             ))}
           </nav>
           <div className="my-4 h-px bg-border" />
-          <Link to="/admin" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-surface-container hover:text-primary">
-            <ShieldCheck className="size-4" /> Administração
-          </Link>
+          {ehAdmin && (
+            <Link to="/admin" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-surface-container hover:text-primary">
+              <ShieldCheck className="size-4" /> Administração
+            </Link>
+          )}
           <Link to="/favoritos" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-surface-container hover:text-primary">
             <Star className="size-4" /> Favoritos
           </Link>
