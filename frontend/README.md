@@ -42,17 +42,20 @@ O frontend não lê o `.env` da raiz para descobrir a URL da API.
 | Rota | Recursos |
 | --- | --- |
 | `/` | Apresentação pública da plataforma. |
-| `/auth` | Login, cadastro e recuperação de senha simulados localmente. |
+| `/auth` | Login, cadastro e pedido de recuperação de senha, integrados à API (JWT). |
+| `/redefinir-senha` | Definição da nova senha a partir do link enviado por e-mail (token no fragmento `#token=...`). |
+| `/confirmar-email` | Confirmação de e-mail a partir do link recebido (fluxo disponível, mas não exigido hoje no cadastro/login). |
 | `/painel` | Listagem de materiais, busca e filtros por curso, semestre, disciplina e tipo; favoritos, visualização, exclusão e atalhos para cadastro da grade. |
-| `/admin` | Administração da grade: abas de cursos, semestres e disciplinas, contadores, busca, filtro por curso, cadastro, edição e exclusão com confirmação. |
+| `/admin` | Somente `ADMIN`. Administração da grade: abas de cursos, semestres e disciplinas, contadores, busca, filtro por curso, cadastro, edição e exclusão com confirmação. |
 | `/compartilhar` | Envio de arquivo com seleção de curso, semestre e disciplina, aviso de LGPD e confirmação de responsabilidade. |
 | `/favoritos` | Materiais favoritados neste navegador. |
-| `/perfil` | Nome e e-mail da sessão local. |
+| `/perfil` | Nome e e-mail da sessão atual. |
 | `/sobre`, `/termos` | Informações públicas sobre a plataforma e seus termos. |
 
 As rotas de painel, admin, compartilhamento, favoritos e perfil usam
-`RequireAuth`: sem sessão local, redirecionam para `/auth`.
-O acesso a `/admin` também aparece no cabeçalho e na navegação lateral.
+`RequireAuth`: sem sessão válida, redirecionam para `/auth`. Com a propriedade
+`admin`, a rota `/admin` também redireciona para `/painel` quem não tem perfil `ADMIN`.
+Os atalhos para `/admin` (cabeçalho, navegação lateral e painel) só aparecem para `ADMIN`.
 
 ## Como o frontend consome as APIs
 
@@ -77,13 +80,18 @@ Os caminhos abaixo são os do backend, sem o prefixo `/api` do frontend.
 | --- | --- | --- | --- | --- |
 | Cursos | `GET /curso` | `POST /curso` | `PUT /curso/{id}` | `DELETE /curso/{id}` |
 | Semestres | `GET /semestres` | `POST /semestres` | `PUT /semestres/{id}` | `DELETE /semestres/{id}` |
-| Disciplinas | `GET /disciplinas?size=500` | `POST /disciplinas` | `PUT /disciplinas/{id}` | `DELETE /disciplinas/{id}` |
-| Materiais | `GET /material?size=500` | `POST /material` | Não utilizada na interface | `DELETE /material/{id}` |
+| Disciplinas | `GET /disciplinas?page=N&size=200` | `POST /disciplinas` | `PUT /disciplinas/{id}` | `DELETE /disciplinas/{id}` |
+| Materiais | `GET /material?page=N&size=200` | `POST /material` | Não utilizada na interface | `DELETE /material/{id}` |
 
 Cursos e semestres retornam arrays. Disciplinas e materiais retornam objetos de
-paginação do Spring Data; a interface lê `content`. Hoje ela solicita uma página
-com até 500 registros e não percorre as demais páginas. Busca e filtros são
-aplicados no navegador sobre os registros carregados.
+paginação do Spring Data. O helper `lista()` de `src/lib/api.js` pede páginas de
+200 registros, uma após a outra, e junta o `content` de todas elas até chegar à
+última página (usa `totalPages`; se o campo não vier, para quando uma página
+chega incompleta). Há uma trava de 50 páginas (10.000 registros) contra laços
+infinitos. Busca e filtros são aplicados no navegador sobre os registros
+carregados, então continuam enxergando todos os dados. Como a listagem não envia
+`sort`, a ordem entre páginas depende do banco; se o volume crescer muito, vale
+definir uma ordenação estável no backend.
 Os semestres são ordenados no frontend por número e depois por nome.
 
 Cadastros e edições da grade enviam JSON com `Content-Type: application/json`:
@@ -132,8 +140,15 @@ A API retorna metadados como `id`, `titulo`, `descricao`, `disciplinaId`,
 
 O cliente trata `204` como resposta sem corpo e lê JSON nas demais respostas de
 sucesso. Em falhas HTTP, tenta mostrar o campo `mensagem` da API; quando ele não
-existe, usa `Erro <status>`. Falhas de conexão exibem uma mensagem para conferir
-se o backend está rodando. As chamadas atuais não enviam token de autenticação.
+existe, usa `Erro <status>`. O erro lançado carrega `status`, usado, por exemplo,
+para tratar `429` (muitas tentativas) e `400` (link inválido). Falhas de conexão
+exibem uma mensagem para conferir se o backend está rodando.
+
+As chamadas enviam `Authorization: Bearer <token>` automaticamente, lendo o JWT do
+`sessionStorage`. As rotas marcadas como `publico` (cadastro, login, confirmação de
+e-mail e recuperação de senha) não enviam o cabeçalho, pois o backend rejeita
+qualquer JWT inválido ou antigo mesmo nessas rotas. Uma resposta `401` indica
+token ausente, inválido, expirado ou invalidado por troca de senha.
 
 ## O que falta para aparecer a prévia dos arquivos
 
@@ -159,8 +174,10 @@ Para completar essa integração, o backend precisa:
    servido pertença ao armazenamento permitido. Manter os uploads persistidos
    quando o backend executar em contêiner.
 5. Garantir que os cabeçalhos de segurança permitam o `iframe` na origem do site.
-   Quando houver autenticação real, definir também como `img`, `iframe` e links
-   acessarão os arquivos protegidos, pois essas tags não usam o helper `fetch`.
+   Hoje o `GET /material/**` é público no backend, então `img`, `iframe` e links
+   funcionam sem token. Se essa rota for protegida no futuro, será preciso definir
+   como essas tags acessarão os arquivos, pois elas não usam o helper `fetch`
+   (e, portanto, não enviam o cabeçalho `Authorization`).
 
 Depois de implementar o endpoint, testar com um PDF e uma imagem reais enviados
 pela interface: conferir a resposta do arquivo na aba de rede do navegador,
@@ -172,22 +189,50 @@ Para exibi-los no navegador será necessário um visualizador adicional ou uma
 conversão para PDF/imagem. A exibição de PDF também depende do suporte do navegador.
 Ainda falta um estado de erro/fallback quando o carregamento de uma prévia falha.
 
-## Sessão local e permissões
+## Autenticação e permissões
 
-O backend ainda não fornece autenticação de usuários; `SecurityConfig` permite
-as requisições sem autenticação. `src/lib/sessao.jsx` guarda apenas nome e e-mail
-em `localStorage`, sem validar credenciais no servidor ou persistir a senha.
+A autenticação é real e feita pelo backend (Spring Security + JWT). O fluxo:
 
-O login verifica formato de e-mail, domínio contendo `unemat` e senha com pelo
-menos seis caracteres. O cadastro exige também nome e validação local de força
-da senha. A recuperação mostra uma confirmação simulada: nenhum e-mail é enviado.
-Essas verificações não substituem a autenticação institucional no backend.
+1. `Auth.jsx` chama `POST /usuario` (cadastro) e `POST /auth/login`; o login devolve `{ token }`.
+2. `src/lib/sessao.jsx` guarda o JWT e os dados da sessão (nome e e-mail) em
+   `sessionStorage`, sob as chaves `banco-academico:token` e `banco-academico:sessao`.
+   A sessão some ao fechar a aba, é removida no logout e expira sozinha quando o
+   token vence (2 horas). A senha nunca é guardada.
+3. O perfil (`USER` ou `ADMIN`) é lido do claim `perfil` do JWT apenas para
+   decidir o que mostrar na interface. **A autorização efetiva é sempre do
+   backend**, que consulta o perfil atual no banco a cada requisição.
 
-**Não existe papel de administrador implementado.** Qualquer usuário com sessão
-local acessa `/admin`. A página administra a grade curricular; não inclui gestão
-de usuários, atribuição de papéis ou aprovação/recusa de materiais.
-Para restringi-la de verdade, faltam autenticação, papéis e autorização no backend,
-além da verificação de permissões no frontend.
+Regras de formulário: o e-mail pode ser de qualquer provedor (a validação é só de
+formato) e a senha precisa de pelo menos 8 caracteres, tanto no login quanto no
+cadastro, igual ao mínimo do backend. O cadastro exige ainda nome com 3+ caracteres e
+força de senha mínima ("Média"). O login não pede confirmação de e-mail.
+O login inválido retorna `409` com mensagem genérica (contrato preservado no backend).
+
+Recuperação de senha: a aba "Recuperar acesso" chama `POST /auth/esqueci-senha` e
+mostra sempre a mesma mensagem, exista a conta ou não. O e-mail traz um link para
+`/redefinir-senha#token=...`; a tela mantém o token só em memória, remove o
+fragmento da barra de endereços e chama `POST /auth/redefinir-senha`. O link vale
+15 minutos e só pode ser usado uma vez. Depois da troca, todas as sessões antigas
+da conta recebem `401`. Para o e-mail ser entregue, o backend precisa de SMTP
+configurado (veja `RECUPERACAO_SENHA.md`).
+
+Permissões no backend (resumo; detalhes em `RELATORIO_AUTENTICACAO.md`):
+
+| Operação | Quem pode |
+| --- | --- |
+| Cadastro, login, confirmação e recuperação | Público |
+| Consultar cursos, semestres, disciplinas e materiais (`GET`) | Público |
+| Enviar material (`POST /material`) | `USER` ou `ADMIN` |
+| Criar, editar e excluir cursos, semestres e disciplinas | `ADMIN` |
+| Editar e excluir materiais | `ADMIN` |
+| Gestão de usuários (`/usuario`, exceto cadastro) | `ADMIN` |
+
+O papel `ADMIN` existe, mas **não há tela nem endpoint público para promover
+alguém**: o primeiro administrador precisa ser provisionado por um procedimento
+confiável (por exemplo, direto no banco). A tela `/admin` administra a grade
+curricular; não inclui gestão de usuários, atribuição de papéis ou
+aprovação/recusa de materiais. Não há revogação individual de JWT no logout: o
+token deixa de existir no navegador, mas continua válido até expirar.
 
 ## Dados locais e funcionalidades pendentes
 
@@ -195,14 +240,17 @@ além da verificação de permissões no frontend.
 | --- | --- |
 | Cursos, semestres e disciplinas | CRUD integrado à API Spring Boot. |
 | Materiais | Listagem, upload e exclusão integrados; falta servir o arquivo para prévia/download. |
-| Login, cadastro, perfil e recuperação | Sessão e simulações locais; faltam endpoints reais e integração de autenticação. |
+| Login, cadastro e sessão | Integrados à API com JWT em `sessionStorage`. |
+| Recuperação de senha | Integrada à API; depende de SMTP configurado no backend. |
+| Confirmação de e-mail | Tela e API existem, mas o cadastro e o login não exigem a confirmação. |
+| Perfil | Mostra nome e e-mail da sessão (o nome vem do cadastro ou, em logins posteriores, da parte do e-mail antes do `@`, pois o login só devolve o token). |
 | Favoritos | IDs em `localStorage`, compartilhados pelas sessões do mesmo navegador; falta persistência por usuário no backend. |
 | Tema | Preferência mantida no navegador. |
 | Referência bibliográfica e responsabilidade | Validadas no formulário de envio; não enviadas nem persistidas pela API atual. |
-| Administração | Gestão da grade implementada; faltam controle de papel, gestão de usuários e moderação. |
+| Administração | Gestão da grade restrita a `ADMIN`; faltam gestão de usuários, promoção de papéis e moderação. |
 | Cores | Paleta por semestre; não há edição/persistência de cor por disciplina. |
 | Estrelas e comentários | Ainda não implementados no frontend nem integrados à API. |
-| Paginação | Listagem de materiais e disciplinas limitada à página solicitada; falta navegação ou carregamento das demais páginas. |
+| Paginação | Listagens de materiais e disciplinas carregam todas as páginas (200 por requisição); busca e filtros seguem no navegador. Não há paginação visual na interface. |
 
 ## Publicação
 
@@ -224,12 +272,12 @@ src/
   lib/
     api.js                  Cliente HTTP e contratos com a API
     academico.js            Validações, cores e utilitários
-    sessao.jsx              Sessão local
+    sessao.jsx              Sessão (JWT e dados em sessionStorage)
     useFavoritos.js         Favoritos locais
     useTema.js              Tema claro/escuro
   components/
     AppShell.jsx            Layout e navegação
-    RequireAuth.jsx         Redirecionamento sem sessão local
+    RequireAuth.jsx         Redirecionamento sem sessão (e sem perfil ADMIN em /admin)
     Gerenciar.jsx           Cadastros rápidos no painel
     MaterialCard.jsx        Card de material
     PreviaArquivo.jsx       Prévia no card
@@ -241,7 +289,9 @@ src/
     Admin.jsx               Gestão de cursos, semestres e disciplinas
     Painel.jsx              Busca, filtros e materiais
     Compartilhar.jsx        Upload
-    Auth.jsx, Perfil.jsx    Experiência de sessão local
+    Auth.jsx, Perfil.jsx    Login, cadastro, recuperação e perfil
+    ConfirmarEmail.jsx      Confirmação de e-mail pelo link
+    RedefinirSenha.jsx      Nova senha a partir do link do e-mail
     Favoritos.jsx           Materiais favoritados
     Home.jsx, Sobre.jsx, Termos.jsx
 ```

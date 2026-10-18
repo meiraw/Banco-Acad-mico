@@ -37,9 +37,9 @@ export function Auth() {
       finally { setEnviando(false) }
       return
     }
-    if (senha.length < 6) { setErro('A senha precisa ter pelo menos 6 caracteres.'); return }
+    // Mesmo mínimo do backend (UsuarioRequestDTO): 8 caracteres no login e no cadastro.
+    if (senha.length < 8) { setErro('A senha precisa ter pelo menos 8 caracteres.'); return }
     if (aba === 'cadastro') {
-      if (senha.length < 8) { setErro('A senha precisa ter pelo menos 8 caracteres.'); return }
       if (nome.trim().length < 3) { setErro('Informe seu nome completo.'); return }
       if (avaliarSenha(senha).nivel < 2) { setErro('Fortaleça sua senha: inclua números e caracteres especiais.'); return }
     }

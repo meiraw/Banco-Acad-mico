@@ -17,7 +17,22 @@ async function req(path, { publico, ...opts } = {}) {
 }
 
 const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-const lista = p => req(`${p}?size=500`).then(page => page.content)
+// Percorre todas as páginas do Spring Data (content + totalPages) e junta os registros.
+const TAMANHO_PAGINA = 200
+const MAX_PAGINAS = 50 // trava de segurança contra laço infinito
+async function lista(p) {
+  const registros = []
+  for (let n = 0; n < MAX_PAGINAS; n++) {
+    const page = await req(`${p}?page=${n}&size=${TAMANHO_PAGINA}`)
+    const conteudo = page.content ?? []
+    registros.push(...conteudo)
+    // totalPages vem na raiz (Page serializado direto) ou em page.totalPages (modo DTO).
+    const total = page.totalPages ?? page.page?.totalPages
+    const acabou = total != null ? n + 1 >= total : page.last === true || conteudo.length < TAMANHO_PAGINA
+    if (acabou || conteudo.length === 0) break
+  }
+  return registros
+}
 
 export const api = {
   cadastrar: d => req('/usuario', { method: 'POST', ...json(d) }),
