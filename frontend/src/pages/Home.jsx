@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { GraduationCap, ArrowRight, BookOpen, Users, Star } from 'lucide-react'
+import { ArrowRight, BookOpen, Users, Star } from 'lucide-react'
+import { Logo } from '../components/Logo.jsx'
 import { ThemeToggle } from '../components/ThemeToggle.jsx'
 
 const DESTAQUES = [
@@ -12,10 +13,9 @@ export function Home() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
-          <Link to="/" className="flex items-center gap-2 text-primary">
-            <GraduationCap className="size-6" />
-            <span className="text-lg font-bold tracking-tight">Banco Acadêmico</span>
+        <div className="mx-auto flex min-h-20 max-w-6xl items-center gap-3 px-4 py-2 sm:gap-4">
+          <Link to="/" className="mr-auto min-w-0">
+            <Logo className="w-40 sm:w-52" />
           </Link>
           <nav className="label-mono ml-auto hidden items-center gap-6 text-muted-foreground sm:flex">
             <Link to="/sobre" className="hover:text-primary">Sobre</Link>

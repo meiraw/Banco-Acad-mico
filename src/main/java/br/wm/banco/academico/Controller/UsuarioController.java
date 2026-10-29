@@ -1,6 +1,7 @@
 package br.wm.banco.academico.Controller;
 
 import br.wm.banco.academico.DTOs.Request.UsuarioRequestDTO;
+import br.wm.banco.academico.DTOs.Request.CadastroUsuarioRequestDTO;
 import br.wm.banco.academico.DTOs.Response.UsuarioResponseDTO;
 import br.wm.banco.academico.Model.Usuario.UsuarioModel;
 import br.wm.banco.academico.Service.UsuarioService;
@@ -23,7 +24,7 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioResponseDTO> criar (@Valid @RequestBody UsuarioRequestDTO dto ){
+    public ResponseEntity<UsuarioResponseDTO> criar (@Valid @RequestBody CadastroUsuarioRequestDTO dto ){
         UsuarioModel usuario = usuarioService.criar(dto);
         return ResponseEntity.status(201).body(new UsuarioResponseDTO (usuario));
     }

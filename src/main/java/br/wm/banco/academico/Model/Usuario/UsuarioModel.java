@@ -14,6 +14,14 @@ import java.util.UUID;
 @Getter
 @Table(name = "usuarios")
 public class UsuarioModel {
+    public static final String CURSO_ACADEMICO = "Ciência da Computação";
+
+    @Column(nullable = false, length = 200)
+    private String curso = CURSO_ACADEMICO;
+
+    @Setter
+    @Column(name = "semestre_atual")
+    private Integer semestreAtual;
 
     @Setter
     @Column(name = "email_confirmado", nullable = false)

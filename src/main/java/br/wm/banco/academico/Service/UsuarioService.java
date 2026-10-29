@@ -2,6 +2,7 @@ package br.wm.banco.academico.Service;
 
 import br.wm.banco.academico.DTOs.Request.LoginRequestDTO;
 import br.wm.banco.academico.DTOs.Request.UsuarioRequestDTO;
+import br.wm.banco.academico.DTOs.Request.CadastroUsuarioRequestDTO;
 import br.wm.banco.academico.Enum.PerfilUsuario;
 import br.wm.banco.academico.Exception.RegraNegocioException;
 import br.wm.banco.academico.Exception.ResourceNotFoundException;
@@ -30,7 +31,16 @@ public class UsuarioService {
 
     //Nosso criar possui : E-mail não repetido , BCrypt e perfil USER automatico
     @org.springframework.transaction.annotation.Transactional
-    public UsuarioModel criar (UsuarioRequestDTO dto ){
+    public UsuarioModel criar (CadastroUsuarioRequestDTO dto ){
+
+        if (dto.getSemestreAtual() == null || dto.getSemestreAtual() < 1 || dto.getSemestreAtual() > 8) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Selecione um semestre entre 1 e 8.");
+        }
+        if (dto.getSenha().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "A senha deve ter no máximo 72 bytes.");
+        }
 
         dto.setEmail(dto.getEmail().trim().toLowerCase(java.util.Locale.ROOT));
 
@@ -40,8 +50,9 @@ public class UsuarioService {
 
         UsuarioModel usuario = new UsuarioModel();
 
-        usuario.setNome(dto.getNome());
+        usuario.setNome(dto.getNome().trim());
         usuario.setEmail(dto.getEmail());
+        usuario.setSemestreAtual(dto.getSemestreAtual());
 
 
         String senhaCriptografada = passwordEncoder.encode(dto.getSenha());

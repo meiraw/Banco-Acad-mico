@@ -3,6 +3,7 @@ import { GraduationCap, Star, Info, FileText, LogOut, Upload, ShieldCheck } from
 import { useSessao } from '../lib/sessao.jsx'
 import { iniciais, corSemestre } from '../lib/academico.js'
 import { ThemeToggle } from './ThemeToggle.jsx'
+import { Logo } from './Logo.jsx'
 
 export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children }) {
   const { perfil, sair } = useSessao()
@@ -18,9 +19,8 @@ export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
-          <Link to="/painel" className="flex items-center gap-2 text-primary">
-            <GraduationCap className="size-6" />
-            <span className="text-lg font-bold tracking-tight">Banco Acadêmico</span>
+          <Link to="/painel" className="min-w-0">
+            <Logo className="w-36 sm:w-44" />
           </Link>
           <div className="flex-1" />
           <ThemeToggle />

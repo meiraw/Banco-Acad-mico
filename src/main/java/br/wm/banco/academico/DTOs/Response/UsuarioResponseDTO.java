@@ -12,12 +12,16 @@ public class UsuarioResponseDTO {
     private String nome;
     private String email;
     private PerfilUsuario perfil;
+    private String curso;
+    private Integer semestreAtual;
 
     public UsuarioResponseDTO(UsuarioModel model){
         this.id = model.getId();
         this.nome = model.getNome();
         this.email = model.getEmail();
         this.perfil = model.getPerfil();
+        this.curso = model.getCurso();
+        this.semestreAtual = model.getSemestreAtual();
     }
 
     public UUID getId (){
@@ -35,6 +39,10 @@ public class UsuarioResponseDTO {
     public PerfilUsuario getPerfil(){
         return perfil;
     }
+
+    public String getCurso() { return curso; }
+
+    public Integer getSemestreAtual() { return semestreAtual; }
 
     //Tiramos a senha pelo fato de não devolver ao front end, por além de ser sensivel
     // O perfil implementamos para o front end entender quais são as permissões que aquele usuario possui.

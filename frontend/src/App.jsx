@@ -18,7 +18,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth" element={<Auth key="login" />} />
+          <Route path="/cadastro" element={<Auth key="cadastro" />} />
           <Route path="/confirmar-email" element={<ConfirmarEmail />} />
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/sobre" element={<Sobre />} />
