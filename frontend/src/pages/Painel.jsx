@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { Search, Sparkles, Upload, ChevronRight, Star, ShieldCheck } from 'lucide-react'
+import { Search, SlidersHorizontal, Upload } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
 import { MaterialCard } from '../components/MaterialCard.jsx'
 import { VisualizadorMaterial } from '../components/VisualizadorMaterial.jsx'
@@ -25,6 +25,22 @@ export function Painel() {
   const [termo, setTermo] = useState('')
   const [tipo, setTipo] = useState('Todos')
   const [previa, setPrevia] = useState(null)
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false)
+  const buscaRef = useRef(null)
+
+  useEffect(() => {
+    if (!filtrosAbertos) return
+    document.documentElement.classList.add('busca-filtros-abertos')
+    return () => document.documentElement.classList.remove('busca-filtros-abertos')
+  }, [filtrosAbertos])
+
+  useEffect(() => {
+    function fecharAoClicarFora(event) {
+      if (!buscaRef.current?.contains(event.target)) setFiltrosAbertos(false)
+    }
+    document.addEventListener('pointerdown', fecharAoClicarFora)
+    return () => document.removeEventListener('pointerdown', fecharAoClicarFora)
+  }, [])
 
   async function carregar() {
     try {
@@ -67,24 +83,38 @@ export function Painel() {
 
   return (
     <AppShell cursos={cursos} semestres={semestresVisiveis} rotuloSemestre={rotuloSemestre}>
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+      <div>
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Olá, {primeiroNome}! Seja bem-vindo</h1>
             <p className="mt-1 text-muted-foreground">Encontre e compartilhe materiais das disciplinas do seu curso.</p>
           </div>
 
+          <div ref={buscaRef} onKeyDown={e => { if (e.key === 'Escape') { setFiltrosAbertos(false); e.stopPropagation() } }}>
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
             <input
               value={termo}
               onChange={e => setTermo(e.target.value)}
+              onFocus={() => setFiltrosAbertos(true)}
+              onClick={() => setFiltrosAbertos(true)}
               placeholder="Buscar por título ou disciplina"
               aria-label="Pesquisar materiais"
-              className="input-base h-12 rounded-full pl-12"
+              aria-expanded={filtrosAbertos}
+              aria-controls="filtros-busca"
+              className="input-base h-12 rounded-full pl-12 pr-28"
             />
+            <button type="button" onClick={() => setFiltrosAbertos(abertos => !abertos)} aria-expanded={filtrosAbertos} aria-controls="filtros-busca" className="btn btn-ghost absolute right-2 top-1/2 -translate-y-1/2 rounded-full text-primary">
+              <SlidersHorizontal className="size-4" /> Filtros
+              {(cursoId || semestreId || disciplinaId || tipo !== 'Todos') && <span className="size-2 rounded-full bg-primary" aria-label="Filtros ativos" />}
+            </button>
           </div>
 
+          {filtrosAbertos && <section id="filtros-busca" aria-label="Filtros de busca" className="card-surface mt-3 space-y-4 p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-semibold text-primary">Filtrar materiais</h2>
+            <button type="button" className="btn btn-ghost text-sm" onClick={() => { setParams({}); setTipo('Todos') }}>Limpar filtros</button>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="filtro-curso" className="label-mono mr-1 text-muted-foreground">Curso</label>
             <select id="filtro-curso" value={cursoId || ''} onChange={e => setParams(e.target.value ? { curso: e.target.value } : {})} className="input-base w-auto max-w-full">
@@ -115,9 +145,15 @@ export function Painel() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="label-mono mr-1 text-muted-foreground">Tipo</span>
             {TIPOS.map(t => <button key={t} onClick={() => setTipo(t)} className={`chip ${tipo === t ? 'on' : ''}`}>{t}</button>)}
-            <div className="ml-auto">
-              <Link to={urlCompartilhar} className="btn btn-secondary"><Upload className="size-4" /> Compartilhar material</Link>
-            </div>
+          </div>
+          <div className="flex justify-end">
+            <button type="button" className="btn btn-primary" onClick={() => setFiltrosAbertos(false)}>Ver resultados</button>
+          </div>
+          </section>}
+          </div>
+
+          <div className="flex justify-end">
+            <Link to={urlCompartilhar} className="btn btn-secondary"><Upload className="size-4" /> Compartilhar material</Link>
           </div>
 
           {erro && <p className="text-sm text-destructive" role="alert">{erro}</p>}
@@ -148,27 +184,6 @@ export function Painel() {
           )}
         </div>
 
-        <aside className="space-y-4">
-          <section className="card-surface p-5">
-            <h2 className="flex items-center gap-2 font-semibold text-primary"><Star className="size-5" /> Seus favoritos</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Materiais salvos com o coração ficam reunidos aqui.</p>
-            <Link to="/favoritos" className="btn btn-outline mt-3 w-full">Abrir favoritos</Link>
-          </section>
-
-          <section className="card-surface bg-muted p-5">
-            <h2 className="flex items-center gap-2 font-semibold text-primary"><Sparkles className="size-5" /> Disciplinas em destaque</h2>
-            <div className="mt-3 space-y-2">
-              {discVisiveis.slice(0, 4).map(d => (
-                <button key={d.id} onClick={() => setTermo(d.nome)} className="flex w-full items-center justify-between rounded-lg bg-card px-3 py-2.5 text-left transition-colors hover:bg-surface-container">
-                  <span className="text-sm font-medium">{d.nome}</span>
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                </button>
-              ))}
-              {!discVisiveis.length && <p className="text-sm text-muted-foreground">Nenhuma disciplina cadastrada ainda.</p>}
-            </div>
-            {ehAdmin && <Link to="/admin" className="btn btn-outline mt-3 w-full"><ShieldCheck className="size-4" /> Gerenciar grade curricular</Link>}
-          </section>
-        </aside>
       </div>
 
       <VisualizadorMaterial material={previa} disciplina={previa && discPorId[previa.disciplinaId]} onClose={() => setPrevia(null)} onExcluir={ehAdmin ? excluir : undefined} />

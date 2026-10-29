@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { ShieldCheck, Plus, Pencil, Trash2, GraduationCap, CalendarDays, BookOpen, Check } from 'lucide-react'
-import { AppShell } from '../components/AppShell.jsx'
 import { Modal } from '../components/Modal.jsx'
 import { api, rotuloSemestre } from '../lib/api.js'
 
@@ -15,7 +14,7 @@ const operacoes = {
   disciplina: [api.criarDisciplina, api.atualizarDisciplina, api.excluirDisciplina],
 }
 
-export function Admin() {
+export function Administracao({ onGradeAtualizada }) {
   const [dados, setDados] = useState({ curso: [], semestre: [], disciplina: [] })
   const [aba, setAba] = useState('curso')
   const [cursoFiltro, setCursoFiltro] = useState('')
@@ -30,6 +29,7 @@ export function Admin() {
   async function carregar() {
     const [curso, semestre, disciplina] = await Promise.all([api.cursos(), api.semestres(), api.disciplinas()])
     setDados({ curso, semestre, disciplina })
+    onGradeAtualizada?.(curso, semestre)
   }
   useEffect(() => {
     let ativo = true
@@ -38,11 +38,6 @@ export function Admin() {
       .catch(e => { if (ativo) setErro(e.message) })
       .finally(() => { if (ativo) setCarregando(false) })
     return () => { ativo = false }
-  }, [])
-  useEffect(() => {
-    const anterior = document.title
-    document.title = 'Painel administrativo | Banco Acadêmico'
-    return () => { document.title = anterior }
   }, [])
 
   const atual = abas.find(a => a.id === aba)
@@ -65,10 +60,10 @@ export function Admin() {
     finally { setOcupado(false) }
   }
 
-  return <AppShell cursos={dados.curso} semestres={dados.semestre} rotuloSemestre={rotuloSemestre}>
-    <div className="space-y-6">
+  return <>
+    <section id="administracao" aria-labelledby="administracao-titulo" className="mt-8 space-y-6 scroll-mt-24">
       <header>
-        <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight"><ShieldCheck className="size-7 text-primary" /> Painel administrativo</h1>
+        <h2 id="administracao-titulo" className="flex items-center gap-2 text-2xl font-bold tracking-tight"><ShieldCheck className="size-7 text-primary" /> Administração</h2>
         <p className="mt-2 text-muted-foreground">Organize os cursos, semestres e disciplinas da grade curricular.</p>
       </header>
       <div className="grid grid-cols-3 gap-3">
@@ -94,10 +89,10 @@ export function Admin() {
           {(carregando || !registros.length) && <div className="p-8 text-center text-muted-foreground">{carregando ? 'Carregando grade curricular…' : busca || cursoFiltro ? 'Nenhum registro encontrado para estes filtros.' : `Nenhum registro cadastrado. Comece cadastrando um ${atual.singular}.`}</div>}
         </div>
       </section>
-    </div>
+    </section>
     {editor && <EditorGrade tipo={editor.tipo} item={editor.item} dados={dados} cursoInicial={cursoFiltro} onClose={() => setEditor(null)} onSalvo={async () => { setEditor(null); setMensagem('Registro salvo.'); try { await carregar() } catch (e) { setErro(`Registro salvo, mas não foi possível atualizar a lista: ${e.message}`) } }} />}
     {removendo && <Modal titulo="Excluir registro" onClose={() => !ocupado && setRemovendo(null)}><p className="text-sm text-muted-foreground">Excluir “{removendo.item.nome}”? Esta ação não pode ser desfeita. Registros vinculados podem impedir a exclusão.</p>{erro && <p role="alert" className="mt-3 text-sm text-destructive">{erro}</p>}<div className="mt-6 flex justify-end gap-2"><button disabled={ocupado} className="btn btn-ghost" onClick={() => setRemovendo(null)}>Cancelar</button><button disabled={ocupado} className="btn bg-destructive text-white" onClick={excluir}>{ocupado ? 'Excluindo…' : 'Excluir'}</button></div></Modal>}
-  </AppShell>
+  </>
 }
 
 function EditorGrade({ tipo, item, dados, cursoInicial, onClose, onSalvo }) {

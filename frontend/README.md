@@ -16,9 +16,8 @@ npm run dev
 ```
 
 Acesse **http://localhost:5173**. O frontend está configurado para consumir o
-backend em **http://localhost:8081**. Iniciar o Vite não inicia o backend nem o banco.
-A porta 8081 é a porta publicada para o backend na configuração local usada nesta
-sessão; o Spring Boot continua usando 8080 internamente por padrão.
+backend em **http://localhost:8080**. Iniciar o Vite não inicia o backend nem o banco.
+O backend está configurado na porta 8080. Consulte ../EXECUCAO_LOCAL.md para configurar banco, JWT e envio de e-mail.
 
 Para permitir acesso ao servidor de desenvolvimento pela rede local:
 
@@ -42,9 +41,9 @@ O frontend não lê o `.env` da raiz para descobrir a URL da API.
 | Rota | Recursos |
 | --- | --- |
 | `/` | Apresentação pública da plataforma. |
-| `/auth` | Login, cadastro e recuperação de senha simulados localmente. |
+| `/auth` | Login, cadastro e recuperação de senha integrados ao backend. |
 | `/painel` | Listagem de materiais, busca e filtros por curso, semestre, disciplina e tipo; favoritos, visualização, exclusão e atalhos para cadastro da grade. |
-| `/admin` | Administração da grade: abas de cursos, semestres e disciplinas, contadores, busca, filtro por curso, cadastro, edição e exclusão com confirmação. |
+| `/perfil` (ADMIN) | Administração da grade: abas de cursos, semestres e disciplinas, contadores, busca, filtro por curso, cadastro, edição e exclusão com confirmação. |
 | `/compartilhar` | Envio de arquivo com seleção de curso, semestre e disciplina, aviso de LGPD e confirmação de responsabilidade. |
 | `/favoritos` | Materiais favoritados neste navegador. |
 | `/perfil` | Nome e e-mail da sessão local. |
@@ -52,7 +51,7 @@ O frontend não lê o `.env` da raiz para descobrir a URL da API.
 
 As rotas de painel, admin, compartilhamento, favoritos e perfil usam
 `RequireAuth`: sem sessão local, redirecionam para `/auth`.
-O acesso a `/admin` também aparece no cabeçalho e na navegação lateral.
+As funções administrativas aparecem dentro de `/perfil` apenas para ADMIN. A rota antiga `/admin` redireciona administradores para o perfil.
 
 ## Como o frontend consome as APIs
 
@@ -62,7 +61,7 @@ a requisição ao Spring Boot:
 
 ```text
 Navegador: GET http://localhost:5173/api/curso
-Vite:     GET http://localhost:8081/curso
+Vite:     GET http://localhost:8080/curso
 ```
 
 Assim, o navegador usa a mesma origem do frontend e não precisa de CORS para
@@ -102,7 +101,7 @@ Cadastros e edições da grade enviam JSON com `Content-Type: application/json`:
 
 Os IDs são UUIDs retornados pela API. A organização é
 **Curso → Semestre → Disciplina → Material**. O número de semestre vai de 1 a 8.
-Para começar com o banco vazio, cadastre um curso em `/admin`, depois seus
+Para começar com o banco vazio, cadastre um curso na seção Administração de `/perfil`, depois seus
 semestres e as disciplinas. Esses cadastros passam a aparecer no painel e no
 formulário de envio. Não há cursos preenchidos automaticamente pelo frontend.
 As alterações no admin recarregam suas listas; outras telas consultam a API ao
@@ -133,7 +132,7 @@ A API retorna metadados como `id`, `titulo`, `descricao`, `disciplinaId`,
 O cliente trata `204` como resposta sem corpo e lê JSON nas demais respostas de
 sucesso. Em falhas HTTP, tenta mostrar o campo `mensagem` da API; quando ele não
 existe, usa `Erro <status>`. Falhas de conexão exibem uma mensagem para conferir
-se o backend está rodando. As chamadas atuais não enviam token de autenticação.
+se o backend está rodando. As chamadas autenticadas enviam o token JWT no cabeçalho Authorization; as rotas públicas de autenticação não enviam esse token.
 
 ## O que falta para aparecer a prévia dos arquivos
 
@@ -172,22 +171,18 @@ Para exibi-los no navegador será necessário um visualizador adicional ou uma
 conversão para PDF/imagem. A exibição de PDF também depende do suporte do navegador.
 Ainda falta um estado de erro/fallback quando o carregamento de uma prévia falha.
 
-## Sessão local e permissões
+## Autenticação e permissões
 
-O backend ainda não fornece autenticação de usuários; `SecurityConfig` permite
-as requisições sem autenticação. `src/lib/sessao.jsx` guarda apenas nome e e-mail
-em `localStorage`, sem validar credenciais no servidor ou persistir a senha.
+O cadastro e o login usam os endpoints reais do backend. O servidor valida as credenciais,
+persiste os usuários no PostgreSQL e emite um JWT. O frontend mantém o token e os dados
+da sessão em sessionStorage. As permissões USER e ADMIN são verificadas pelo backend,
+e o frontend restringe as telas conforme o perfil do token.
 
-O login verifica formato de e-mail, domínio contendo `unemat` e senha com pelo
-menos seis caracteres. O cadastro exige também nome e validação local de força
-da senha. A recuperação mostra uma confirmação simulada: nenhum e-mail é enviado.
-Essas verificações não substituem a autenticação institucional no backend.
+A recuperação de senha usa envio SMTP e tokens de uso único com validade de 15 minutos.
+O envio depende das credenciais e da conectividade configuradas no backend.
 
-**Não existe papel de administrador implementado.** Qualquer usuário com sessão
-local acessa `/admin`. A página administra a grade curricular; não inclui gestão
-de usuários, atribuição de papéis ou aprovação/recusa de materiais.
-Para restringi-la de verdade, faltam autenticação, papéis e autorização no backend,
-além da verificação de permissões no frontend.
+A tela de perfil ainda apresenta os dados guardados na sessão. No login, o nome é derivado
+do e-mail; ainda falta uma consulta ao backend para obter o nome cadastrado atualizado.
 
 ## Dados locais e funcionalidades pendentes
 
@@ -195,11 +190,11 @@ além da verificação de permissões no frontend.
 | --- | --- |
 | Cursos, semestres e disciplinas | CRUD integrado à API Spring Boot. |
 | Materiais | Listagem, upload e exclusão integrados; falta servir o arquivo para prévia/download. |
-| Login, cadastro, perfil e recuperação | Sessão e simulações locais; faltam endpoints reais e integração de autenticação. |
+| Login, cadastro, perfil e recuperação | Cadastro, login e recuperação integrados ao backend; perfil ainda usa dados da sessão. |
 | Favoritos | IDs em `localStorage`, compartilhados pelas sessões do mesmo navegador; falta persistência por usuário no backend. |
 | Tema | Preferência mantida no navegador. |
 | Referência bibliográfica e responsabilidade | Validadas no formulário de envio; não enviadas nem persistidas pela API atual. |
-| Administração | Gestão da grade implementada; faltam controle de papel, gestão de usuários e moderação. |
+| Administração | Gestão da grade com controle de papel ADMIN; gestão de usuários e moderação não estão implementadas nesta interface. |
 | Cores | Paleta por semestre; não há edição/persistência de cor por disciplina. |
 | Estrelas e comentários | Ainda não implementados no frontend nem integrados à API. |
 | Paginação | Listagem de materiais e disciplinas limitada à página solicitada; falta navegação ou carregamento das demais páginas. |

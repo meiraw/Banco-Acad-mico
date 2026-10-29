@@ -3,6 +3,7 @@ import { AppShell } from '../components/AppShell.jsx'
 import { api, rotuloSemestre } from '../lib/api.js'
 import { useSessao } from '../lib/sessao.jsx'
 import { iniciais } from '../lib/academico.js'
+import { Administracao } from './Admin.jsx'
 
 export function Perfil() {
   const { perfil } = useSessao()
@@ -25,12 +26,13 @@ export function Perfil() {
         </div>
       </div>
 
-      <div className="card-surface mt-4 p-6">
-        <p className="text-sm text-muted-foreground">
-          Este login é local ao seu navegador — o backend ainda não tem cadastro/autenticação real (veja o README do projeto).
-          Assim que a US03/US04 forem implementadas no servidor, esta tela passa a refletir sua conta de verdade.
-        </p>
-      </div>
+      {perfil?.perfil === 'ADMIN' && (
+        <Administracao onGradeAtualizada={(novosCursos, novosSemestres) => {
+          setCursos(novosCursos)
+          setSemestres(novosSemestres)
+        }} />
+      )}
+
     </AppShell>
   )
 }

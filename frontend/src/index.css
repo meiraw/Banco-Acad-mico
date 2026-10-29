@@ -68,6 +68,14 @@
   h1, h2, h3 { letter-spacing: -0.01em; }
 }
 
+/* Oculta a barra durante a busca sem impedir rolagem por mouse, toque ou teclado. */
+html.busca-filtros-abertos {
+  scrollbar-width: none;
+}
+html.busca-filtros-abertos::-webkit-scrollbar {
+  display: none;
+}
+
 @layer components {
   .label-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.02em; }
   .card-surface { background-color: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-card); }

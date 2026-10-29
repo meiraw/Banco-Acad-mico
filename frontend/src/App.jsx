@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { SessaoProvider } from './lib/sessao.jsx'
 import { RequireAuth } from './components/RequireAuth.jsx'
 import { Home } from './pages/Home.jsx'
@@ -11,7 +11,6 @@ import { Favoritos } from './pages/Favoritos.jsx'
 import { Perfil } from './pages/Perfil.jsx'
 import { Sobre } from './pages/Sobre.jsx'
 import { Termos } from './pages/Termos.jsx'
-import { Admin } from './pages/Admin.jsx'
 
 export default function App() {
   return (
@@ -28,7 +27,7 @@ export default function App() {
           <Route path="/compartilhar" element={<RequireAuth><Compartilhar /></RequireAuth>} />
           <Route path="/favoritos" element={<RequireAuth><Favoritos /></RequireAuth>} />
           <Route path="/perfil" element={<RequireAuth><Perfil /></RequireAuth>} />
-          <Route path="/admin" element={<RequireAuth admin><Admin /></RequireAuth>} />
+          <Route path="/admin" element={<RequireAuth admin><Navigate to="/perfil#administracao" replace /></RequireAuth>} />
           <Route path="*" element={<Home />} />
         </Routes>
       </BrowserRouter>

@@ -25,7 +25,7 @@ Variáveis existentes DB_PASSWORD, JWT_SECRET e CORS_ALLOWED_ORIGINS continuam n
 | SMTP_STARTTLS | habilita e exige STARTTLS; padrão true |
 | PASSWORD_RESET_URL | URL absoluta da tela React, sem query ou fragmento; padrão http://localhost:5173/redefinir-senha |
 
-Em produção configure remetente válido e URL HTTPS. Para servidor de captura local sem autenticação/TLS, use SMTP_AUTH=false e SMTP_STARTTLS=false. Timeouts SMTP de conexão/leitura/escrita: 5 segundos. As variáveis precisam estar no ambiente do processo; Spring não carrega um arquivo .env automaticamente. Não versionar credenciais nem habilitar debug SMTP ou logs de corpos de requisições nessas rotas.
+Em produção configure remetente válido e URL HTTPS. Para servidor de captura local sem autenticação/TLS, use SMTP_AUTH=false e SMTP_STARTTLS=false. Timeouts SMTP de conexão/leitura/escrita: 5 segundos. O backend importa o .env da raiz como Java Properties ao executar a partir da raiz; use valores sem aspas. Variáveis no ambiente do processo têm prioridade. Consulte EXECUCAO_LOCAL.md. Não versionar credenciais nem habilitar debug SMTP ou logs de corpos de requisições nessas rotas.
 
 ## Contratos JSON
 
