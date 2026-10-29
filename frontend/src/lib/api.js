@@ -1,6 +1,6 @@
 const BASE = '/api'
 
-async function req(path, { publico, ...opts } = {}) {
+async function req(path, { publico, resposta, ...opts } = {}) {
   // Rotas publicas (ex.: recuperacao de senha) nao enviam Authorization: o backend rejeita
   // qualquer JWT invalido ou antigo presente no cabecalho, mesmo nessas rotas.
   const token = publico ? null : sessionStorage.getItem('banco-academico:token')
@@ -13,13 +13,20 @@ async function req(path, { publico, ...opts } = {}) {
     try { msg = (await res.json()).mensagem || msg } catch { /* corpo vazio */ }
     throw Object.assign(new Error(msg), { status: res.status })
   }
-  return res.status === 204 ? null : res.json()
+  return res.status === 204 ? null : resposta === 'blob' ? res.blob() : res.json()
 }
 
 const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 const lista = p => req(`${p}?size=500`).then(page => page.content)
 
 export const api = {
+  meuPerfil: () => req('/perfil'),
+  fotoPerfil: () => req('/perfil/foto', { resposta: 'blob' }),
+  salvarFotoPerfil: foto => {
+    const dados = new FormData()
+    dados.append('foto', foto)
+    return req('/perfil/foto', { method: 'PUT', body: dados })
+  },
   cadastrar: d => req('/usuario', { method: 'POST', publico: true, ...json(d) }),
   login: d => req('/auth/login', { method: 'POST', publico: true, ...json(d) }),
   confirmarEmail: token => req('/auth/confirmar-email', { method: 'POST', publico: true, ...json({ token }) }),

@@ -33,6 +33,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/auth/confirmar-email", "/auth/reenviar-confirmacao").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/esqueci-senha", "/auth/redefinir-senha", "/usuario").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/perfil", "/perfil/foto").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/perfil/foto").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/usuario", "/usuario/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/curso", "/curso/**", "/semestres", "/semestres/**",
                                 "/disciplinas", "/disciplinas/**", "/material", "/material/**").permitAll()

@@ -1,4 +1,5 @@
-﻿import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { api } from './api.js'
 
 const CHAVE = 'banco-academico:sessao'
 const TOKEN = 'banco-academico:token'
@@ -18,7 +19,38 @@ function carregar() {
 
 export function SessaoProvider({ children }) {
   const [perfil, setPerfil] = useState(carregar)
+  const [fotoUrl, setFotoUrl] = useState(null)
+  const [erroPerfil, setErroPerfil] = useState('')
+  const consultaPerfil = useRef(0)
+  const tokenAtual = perfil?.token
+
+  const recarregarPerfil = useCallback(async () => {
+    if (!tokenAtual) return
+    const consulta = ++consultaPerfil.current
+    const dados = await api.meuPerfil()
+    const foto = dados.possuiFoto ? await api.fotoPerfil() : null
+    if (consulta !== consultaPerfil.current || sessionStorage.getItem(TOKEN) !== tokenAtual) return
+    setPerfil(atual => {
+      if (!atual || atual.token !== tokenAtual) return atual
+      const atualizado = { ...atual, ...dados }
+      sessionStorage.setItem(CHAVE, JSON.stringify(atualizado))
+      return atualizado
+    })
+    setFotoUrl(foto ? URL.createObjectURL(foto) : null)
+    setErroPerfil('')
+  }, [tokenAtual])
+
+  useEffect(() => {
+    if (!tokenAtual) return
+    let ativo = true
+    recarregarPerfil().catch(error => { if (ativo) setErroPerfil(error.message) })
+    return () => { ativo = false; consultaPerfil.current++ }
+  }, [tokenAtual, recarregarPerfil])
+
+  useEffect(() => () => { if (fotoUrl) URL.revokeObjectURL(fotoUrl) }, [fotoUrl])
   function entrar(dados) {
+    setFotoUrl(null)
+    setErroPerfil('')
     const info = claims(dados.token)
     const sessao = { ...dados, perfil: info.perfil }
     sessionStorage.setItem(TOKEN, dados.token)
@@ -26,6 +58,9 @@ export function SessaoProvider({ children }) {
     setPerfil(sessao)
   }
   function sair() {
+    consultaPerfil.current++
+    setFotoUrl(null)
+    setErroPerfil('')
     sessionStorage.removeItem(CHAVE)
     sessionStorage.removeItem(TOKEN)
     setPerfil(null)
@@ -37,7 +72,7 @@ export function SessaoProvider({ children }) {
     const timer = setTimeout(sair, Math.max(0, tempo))
     return () => clearTimeout(timer)
   }, [perfil])
-  return <SessaoContexto.Provider value={{ perfil, entrar, sair }}>{children}</SessaoContexto.Provider>
+  return <SessaoContexto.Provider value={{ perfil, fotoUrl, erroPerfil, recarregarPerfil, entrar, sair }}>{children}</SessaoContexto.Provider>
 }
 
 export function useSessao() {

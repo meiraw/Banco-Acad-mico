@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExpcetionHandler {
+        @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+        public ResponseEntity<ErrorResponse> handleUploadMuitoGrande() {
+            return ResponseEntity.status(413).body(new ErrorResponse("O arquivo excede o tamanho permitido.", 413));
+        }
         @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
         public ResponseEntity<ErrorResponse> handleStatus(org.springframework.web.server.ResponseStatusException ex) {
             return ResponseEntity.status(ex.getStatusCode())

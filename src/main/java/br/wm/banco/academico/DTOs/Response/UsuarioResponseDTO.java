@@ -14,6 +14,7 @@ public class UsuarioResponseDTO {
     private PerfilUsuario perfil;
     private String curso;
     private Integer semestreAtual;
+    private boolean possuiFoto;
 
     public UsuarioResponseDTO(UsuarioModel model){
         this.id = model.getId();
@@ -23,6 +24,13 @@ public class UsuarioResponseDTO {
         this.curso = model.getCurso();
         this.semestreAtual = model.getSemestreAtual();
     }
+
+    public UsuarioResponseDTO(UsuarioModel model, boolean possuiFoto) {
+        this(model);
+        this.possuiFoto = possuiFoto;
+    }
+
+    public boolean isPossuiFoto() { return possuiFoto; }
 
     public UUID getId (){
         return id;

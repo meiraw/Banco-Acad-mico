@@ -1,12 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { GraduationCap, Star, Info, FileText, LogOut, Upload, ShieldCheck } from 'lucide-react'
 import { useSessao } from '../lib/sessao.jsx'
-import { iniciais, corSemestre } from '../lib/academico.js'
+import { corSemestre } from '../lib/academico.js'
+import { Avatar } from './Avatar.jsx'
 import { ThemeToggle } from './ThemeToggle.jsx'
 import { Logo } from './Logo.jsx'
 
 export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children }) {
-  const { perfil, sair } = useSessao()
+  const { perfil, fotoUrl, sair } = useSessao()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -29,9 +30,7 @@ export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children
               <p className="text-sm font-semibold leading-tight">{perfil?.nome ?? 'Acadêmico'}</p>
               <p className="label-mono text-secondary">{perfil?.email}</p>
             </div>
-            <span className="grid size-10 place-items-center rounded-full bg-primary font-semibold text-primary-foreground">
-              {iniciais(perfil?.nome ?? 'A')}
-            </span>
+            <Avatar nome={perfil?.nome} fotoUrl={fotoUrl} className="size-10" />
           </Link>
           <button className="btn btn-ghost btn-icon" aria-label="Sair" onClick={sairEVoltar}><LogOut className="size-5" /></button>
         </div>
