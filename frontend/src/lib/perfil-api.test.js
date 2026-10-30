@@ -19,6 +19,14 @@ test('perfil e fotos usam autenticação e preservam o multipart', async t => {
     }
     assert.equal((await api.meuPerfil()).possuiFoto, true)
   })
+  await t.test('carrega publicações próprias com autenticação e paginação', async () => {
+    globalThis.fetch = async (url, options) => {
+      assert.equal(url, '/api/perfil/publicacoes?pagina=2')
+      assert.equal(options.headers.Authorization, 'Bearer token-de-teste')
+      return { ok: true, status: 200, json: async () => ({ content: [], last: true }) }
+    }
+    assert.deepEqual((await api.minhasPublicacoes(2)).content, [])
+  })
   await t.test('baixa foto autenticada como blob', async () => {
     const foto = new Blob(['imagem'], { type: 'image/png' })
     globalThis.fetch = async (url, options) => {

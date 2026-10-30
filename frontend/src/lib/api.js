@@ -20,7 +20,16 @@ const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: J
 const lista = p => req(`${p}?size=500`).then(page => page.content)
 
 export const api = {
+  material: id => req(`/material/${id}`),
+  comentarios: (id, pagina = 0) => req(`/material/${id}/comentarios?pagina=${pagina}`),
+  comentar: (id, texto) => req(`/material/${id}/comentarios`, { method: 'POST', ...json({ texto }) }),
+  curtida: id => req(`/material/${id}/curtida`),
+  curtir: id => req(`/material/${id}/curtida`, { method: 'PUT' }),
+  descurtir: id => req(`/material/${id}/curtida`, { method: 'DELETE' }),
+  respostas: (id, comentarioId, pagina = 0) => req(`/material/${id}/comentarios/${comentarioId}/respostas?pagina=${pagina}`),
+  responder: (id, comentarioId, texto, respostaPaiId) => req(`/material/${id}/comentarios/${comentarioId}/respostas`, { method: 'POST', ...json({ texto, ...(respostaPaiId ? { respostaPaiId } : {}) }) }),
   meuPerfil: () => req('/perfil'),
+  minhasPublicacoes: (pagina = 0) => req(`/perfil/publicacoes?pagina=${pagina}`),
   fotoPerfil: () => req('/perfil/foto', { resposta: 'blob' }),
   salvarFotoPerfil: foto => {
     const dados = new FormData()

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Mail, User, ArrowRight, ArrowLeft, MailCheck } from 'lucide-react'
-import { Logo } from '../components/Logo.jsx'
+import { AuthLayout } from '../components/AuthLayout.jsx'
 import { CampoSenha } from '../components/CampoSenha.jsx'
 import { isEmailValido } from '../lib/academico.js'
 import { CURSO_ACADEMICO, validarCadastro } from '../lib/cadastro.js'
@@ -73,17 +73,7 @@ export function Auth() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <div>
-            <Link to="/" className="inline-block max-w-full">
-              <Logo className="w-72 sm:w-80" />
-            </Link>
-            <p className="label-mono mt-2 text-muted-foreground">Apoio institucional para acadêmicos da UNEMAT</p>
-          </div>
-        </div>
-
+    <AuthLayout dividido={aba !== 'recuperar'}>
         {aba === 'recuperar' && emailEnviado ? (
           <div className="card-surface space-y-4 p-6">
             <MailCheck className="size-8 text-secondary" />
@@ -174,7 +164,6 @@ export function Auth() {
             </fieldset>
           </form>
         )}
-      </div>
-    </div>
+    </AuthLayout>
   )
 }

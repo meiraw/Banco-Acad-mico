@@ -5,6 +5,7 @@ import { api, rotuloSemestre } from '../lib/api.js'
 import { useSessao } from '../lib/sessao.jsx'
 import { Avatar } from '../components/Avatar.jsx'
 import { Administracao } from './Admin.jsx'
+import { MinhasPublicacoes } from '../components/MinhasPublicacoes.jsx'
 
 export function Perfil() {
   const { perfil, fotoUrl, erroPerfil, recarregarPerfil } = useSessao()
@@ -72,6 +73,8 @@ export function Perfil() {
           {mensagemFoto && <p role="status" className="text-sm text-secondary">{mensagemFoto}</p>}
         </div>
       </div>
+
+      <MinhasPublicacoes cursos={cursos} semestres={semestres} />
 
       {perfil?.perfil === 'ADMIN' && (
         <Administracao onGradeAtualizada={(novosCursos, novosSemestres) => {

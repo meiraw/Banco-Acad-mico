@@ -24,6 +24,7 @@ public class SecurityConfig {
         return http
                 // Bearer no header; sem autenticacao por cookies de sessao.
                 .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .cors(cors -> cors.configurationSource(corsSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(cache -> cache.disable())
@@ -33,12 +34,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/auth/confirmar-email", "/auth/reenviar-confirmacao").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/esqueci-senha", "/auth/redefinir-senha", "/usuario").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/perfil", "/perfil/foto").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/perfil", "/perfil/foto", "/perfil/publicacoes").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/perfil/foto").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/usuario", "/usuario/**").hasRole("ADMIN")
+                        .requestMatchers("/material/*/curtida").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/curso", "/curso/**", "/semestres", "/semestres/**",
                                 "/disciplinas", "/disciplinas/**", "/material", "/material/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/material").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/material/*/comentarios").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/material/*/comentarios/*/respostas").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/curso", "/curso/**", "/semestres", "/semestres/**",
                                 "/disciplinas", "/disciplinas/**", "/material", "/material/**").hasRole("ADMIN")
                         .anyRequest().denyAll())

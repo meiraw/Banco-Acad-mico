@@ -47,8 +47,8 @@ export function Compartilhar() {
 
     setEnviando(true)
     try {
-      await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId }, arquivo)
-      navigate(`/painel?curso=${cursoId}&semestre=${semestreId}`, { replace: true })
+      const material = await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId }, arquivo)
+      navigate(`/material/${material.id}`, { replace: true })
     } catch (err) { setErro(err.message); setEnviando(false) }
   }
 

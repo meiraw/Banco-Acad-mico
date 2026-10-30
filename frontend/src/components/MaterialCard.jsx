@@ -3,20 +3,22 @@ import { categoria, tamanho, rotuloSemestre } from '../lib/api.js'
 import { corSemestre } from '../lib/academico.js'
 import { useFavoritos } from '../lib/useFavoritos.js'
 import { PreviaArquivo } from './PreviaArquivo.jsx'
+import { Link } from 'react-router-dom'
+import { Avatar } from './Avatar.jsx'
 
 const ICONES = { PDF: FileText, Slides: Presentation, Imagem: ImageIcon, Outro: FileQuestion }
 
-export function MaterialCard({ material, disciplina, semestreIndice, semestre, cursos = [], onVisualizar, onExcluir }) {
+export function MaterialCard({ material, disciplina, semestreIndice, semestre, cursos = [], onExcluir }) {
   const cat = categoria(material.tipoArquivo)
   const Icone = ICONES[cat]
-  const { isFavorito, alternar } = useFavoritos()
+  const { isFavorito, alternar, disponivel } = useFavoritos()
   const favorito = isFavorito(material.id)
 
   return (
     <article className="card-surface flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
-      <button type="button" onClick={() => onVisualizar(material)} aria-label={`Pré-visualizar ${material.titulo}`} className="block w-full text-left">
+      <Link to={`/material/${material.id}`} aria-label={`Abrir publicação: ${material.titulo}`} className="block w-full text-left">
         <PreviaArquivo material={material} categoriaTipo={cat} />
-      </button>
+      </Link>
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
           {semestreIndice != null ? (
@@ -27,6 +29,7 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
           <button
             type="button"
             onClick={() => alternar(material.id)}
+            disabled={!disponivel}
             aria-pressed={favorito}
             aria-label={favorito ? 'Remover dos favoritos' : 'Favoritar material'}
             title={favorito ? 'Remover dos favoritos' : 'Favoritar material'}
@@ -41,10 +44,17 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
         {semestre && <p className="label-mono text-muted-foreground">{cursos.find(c => c.id === semestre.cursoId)?.nome}</p>}
 
         <h3 className="line-clamp-2 text-lg font-semibold">
-          <button type="button" onClick={() => onVisualizar(material)} className="text-left transition-colors hover:text-primary">
+          <Link to={`/material/${material.id}`} className="text-left transition-colors hover:text-primary">
             {material.titulo}
-          </button>
+          </Link>
         </h3>
+
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar nome={material.autorNome} className="size-7 text-xs" />
+          <p className="min-w-0 break-words text-sm text-muted-foreground">
+            Publicado por <span className="font-semibold text-foreground">{material.autorNome || 'Autor não informado'}</span>
+          </p>
+        </div>
 
         <span className="label-mono w-fit rounded-full border border-border bg-surface-container px-2.5 py-1 text-muted-foreground">
           {disciplina?.nome ?? 'Sem disciplina'}
@@ -57,9 +67,9 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
             <Icone className="size-4" /> {cat} · {tamanho(material.tamanhoArquivo)}
           </span>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => onVisualizar(material)} className="label-mono flex items-center gap-1 text-secondary transition-opacity hover:opacity-80">
-              <Eye className="size-4" /> Visualizar
-            </button>
+            <Link to={`/material/${material.id}`} className="label-mono flex items-center gap-1 text-secondary transition-opacity hover:opacity-80">
+              <Eye className="size-4" /> Ver publicação
+            </Link>
             {onExcluir && (
               <button type="button" onClick={() => onExcluir(material)} className="label-mono flex items-center gap-1 text-destructive transition-opacity hover:opacity-80">
                 <Trash2 className="size-4" /> Excluir

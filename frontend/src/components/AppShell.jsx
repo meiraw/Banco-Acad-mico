@@ -1,9 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { GraduationCap, Star, Info, FileText, LogOut, Upload, ShieldCheck } from 'lucide-react'
+import { GraduationCap, Star, Settings, LogOut, ShieldCheck } from 'lucide-react'
 import { useSessao } from '../lib/sessao.jsx'
 import { corSemestre } from '../lib/academico.js'
 import { Avatar } from './Avatar.jsx'
-import { ThemeToggle } from './ThemeToggle.jsx'
 import { Logo } from './Logo.jsx'
 
 export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children }) {
@@ -18,17 +17,15 @@ export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
+      <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
           <Link to="/painel" className="min-w-0">
             <Logo className="w-36 sm:w-44" />
           </Link>
           <div className="flex-1" />
-          <ThemeToggle />
           <Link to="/perfil" className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold leading-tight">{perfil?.nome ?? 'Acadêmico'}</p>
-              <p className="label-mono text-secondary">{perfil?.email}</p>
+              <p className="text-base font-semibold leading-tight">{perfil?.nome ?? 'Acadêmico'}</p>
             </div>
             <Avatar nome={perfil?.nome} fotoUrl={fotoUrl} className="size-10" />
           </Link>
@@ -63,15 +60,9 @@ export function AppShell({ cursos = [], semestres = [], rotuloSemestre, children
           <Link to="/favoritos" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-surface-container hover:text-primary">
             <Star className="size-4" /> Favoritos
           </Link>
-          <Link to="/compartilhar" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-surface-container hover:text-primary">
-            <Upload className="size-4" /> Compartilhar
-          </Link>
           <div className="my-4 h-px bg-border" />
-          <Link to="/sobre" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-surface-container hover:text-primary">
-            <Info className="size-4" /> Sobre
-          </Link>
-          <Link to="/termos" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-surface-container hover:text-primary">
-            <FileText className="size-4" /> Termos
+          <Link to="/configuracoes" className="label-mono flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-surface-container hover:text-primary">
+            <Settings className="size-4" /> Configurações
           </Link>
         </aside>
 

@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { SessaoProvider } from './lib/sessao.jsx'
+import { SessaoProvider, useSessao } from './lib/sessao.jsx'
 import { RequireAuth } from './components/RequireAuth.jsx'
 import { Home } from './pages/Home.jsx'
 import { Auth } from './pages/Auth.jsx'
@@ -11,10 +11,18 @@ import { Favoritos } from './pages/Favoritos.jsx'
 import { Perfil } from './pages/Perfil.jsx'
 import { Sobre } from './pages/Sobre.jsx'
 import { Termos } from './pages/Termos.jsx'
+import { Publicacao } from './pages/Publicacao.jsx'
+import { Configuracoes } from './pages/Configuracoes.jsx'
+import { TemaProvider } from './lib/useTema.js'
 
 export default function App() {
+  return <SessaoProvider><InterfaceConta /></SessaoProvider>
+}
+
+function InterfaceConta() {
+  const { perfil } = useSessao()
   return (
-    <SessaoProvider>
+    <TemaProvider key={perfil?.token || 'visitante'}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -25,13 +33,15 @@ export default function App() {
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/termos" element={<Termos />} />
           <Route path="/painel" element={<RequireAuth><Painel /></RequireAuth>} />
+          <Route path="/material/:id" element={<RequireAuth><Publicacao /></RequireAuth>} />
           <Route path="/compartilhar" element={<RequireAuth><Compartilhar /></RequireAuth>} />
           <Route path="/favoritos" element={<RequireAuth><Favoritos /></RequireAuth>} />
           <Route path="/perfil" element={<RequireAuth><Perfil /></RequireAuth>} />
+          <Route path="/configuracoes" element={<RequireAuth><Configuracoes /></RequireAuth>} />
           <Route path="/admin" element={<RequireAuth admin><Navigate to="/perfil#administracao" replace /></RequireAuth>} />
           <Route path="*" element={<Home />} />
         </Routes>
       </BrowserRouter>
-    </SessaoProvider>
+    </TemaProvider>
   )
 }

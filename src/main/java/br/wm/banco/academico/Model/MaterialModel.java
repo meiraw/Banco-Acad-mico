@@ -3,8 +3,10 @@ package br.wm.banco.academico.Model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import br.wm.banco.academico.Model.Usuario.UsuarioModel;
 
 import java.util.UUID;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -12,6 +14,12 @@ import java.util.UUID;
 @Table(name = "materiais")
 
 public class MaterialModel {
+    @ManyToOne
+    @JoinColumn(name = "autor_id")
+    private UsuarioModel autor;
+
+    private Instant publicadoEm;
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

@@ -3,9 +3,9 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { Search, SlidersHorizontal, Upload } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
 import { MaterialCard } from '../components/MaterialCard.jsx'
-import { VisualizadorMaterial } from '../components/VisualizadorMaterial.jsx'
 import { api, categoria, rotuloSemestre } from '../lib/api.js'
 import { useSessao } from '../lib/sessao.jsx'
+import emptyMaterials from '../assets/illustrations/empty-materials.png'
 
 const TIPOS = ['Todos', 'PDF', 'Slides', 'Imagem', 'Outro']
 
@@ -24,7 +24,6 @@ export function Painel() {
   const [erro, setErro] = useState('')
   const [termo, setTermo] = useState('')
   const [tipo, setTipo] = useState('Todos')
-  const [previa, setPrevia] = useState(null)
   const [filtrosAbertos, setFiltrosAbertos] = useState(false)
   const buscaRef = useRef(null)
 
@@ -78,7 +77,7 @@ export function Painel() {
 
   async function excluir(m) {
     if (!ehAdmin) return
-    try { await api.excluirMaterial(m.id); setPrevia(null); carregar() } catch (e) { setErro(e.message) }
+    try { await api.excluirMaterial(m.id); carregar() } catch (e) { setErro(e.message) }
   }
 
   return (
@@ -162,9 +161,10 @@ export function Painel() {
             <p className="label-mono text-muted-foreground">Carregando materiais…</p>
           ) : filtrados.length === 0 ? (
             <div className="card-surface p-8 text-center">
+              <img src={emptyMaterials} alt="Estudante pensativo diante de uma pasta vazia, representando a ausência de materiais publicados."
+                className="mx-auto mb-4 h-auto w-44 max-w-full object-contain sm:w-56" />
               <p className="font-medium">{materiais.length ? 'Nenhum material encontrado' : 'Ainda não há materiais'}</p>
               <p className="mt-1 text-sm text-muted-foreground">{materiais.length ? 'Tente outro termo ou limpe os filtros.' : 'Seja o primeiro a contribuir com a turma.'}</p>
-              <Link to={urlCompartilhar} className="btn btn-primary mt-4 inline-flex">Compartilhar material</Link>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
@@ -176,7 +176,6 @@ export function Painel() {
                   semestreIndice={semestreIndicePorDisc[m.disciplinaId]}
                   semestre={semestres.find(s => s.id === discPorId[m.disciplinaId]?.semestreId)}
                   cursos={cursos}
-                  onVisualizar={setPrevia}
                   onExcluir={ehAdmin ? excluir : undefined}
                 />
               ))}
@@ -186,7 +185,6 @@ export function Painel() {
 
       </div>
 
-      <VisualizadorMaterial material={previa} disciplina={previa && discPorId[previa.disciplinaId]} onClose={() => setPrevia(null)} onExcluir={ehAdmin ? excluir : undefined} />
     </AppShell>
   )
 }

@@ -4,8 +4,13 @@ import br.wm.banco.academico.Model.MaterialModel;
 
 
 import java.util.UUID;
+import java.time.Instant;
 
 public class MaterialResponseDTO {
+    private String autorNome;
+    private Instant publicadoEm;
+    public String getAutorNome() { return autorNome; }
+    public Instant getPublicadoEm() { return publicadoEm; }
 
     private UUID id;
     private String titulo;
@@ -17,6 +22,8 @@ public class MaterialResponseDTO {
     private UUID disciplinaId;
 
     public MaterialResponseDTO(MaterialModel model){
+        this.autorNome = model.getAutor() == null ? null : model.getAutor().getNome();
+        this.publicadoEm = model.getPublicadoEm();
         this.id = model.getId();
         this.titulo = model.getTitulo();
         this.descricao = model.getDescricao();
