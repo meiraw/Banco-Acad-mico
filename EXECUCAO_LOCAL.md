@@ -30,10 +30,7 @@ O proxy Vite vale para desenvolvimento; a hospedagem de produção precisa confi
 
 ## Conferir a recuperação
 
-Cadastre uma conta com um e-mail de teste que você controla. Em Esqueci minha senha, solicite o link,
-confira a caixa de entrada e spam e abra o link em até 15 minutos. Defina a nova senha e confira o login.
-A resposta 200 não comprova entrega: também é usada para conta ausente, limite por endereço ou falha SMTP.
-Em falha SMTP, o backend registra uma advertência e remove o token. Não há envio de aviso após a troca da senha.
+Em Esqueci minha senha, solicite o código enviado por e-mail e informe os 4 dígitos na tela de recuperação em até 15 minutos. A validação abre a página de nova senha. O código tem uso único e limite de 5 tentativas por e-mail a cada janela de 15 minutos. A autorização fica apenas em memória: atualizar a página exige outro código.
 
 Para usuários fora desta máquina, altere PASSWORD_RESET_URL e EMAIL_CONFIRMATION_URL para as URLs públicas HTTPS do frontend.
 Um link localhost só abre o projeto na própria máquina de quem clica.

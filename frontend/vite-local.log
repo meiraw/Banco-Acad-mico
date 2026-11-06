@@ -1,0 +1,18 @@
+
+> banco-academico-frontend@0.1.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 373 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+08:24:13 [vite] hmr update /src/pages/Auth.jsx, /src/index.css
+08:24:13 [vite] hmr update /src/index.css, /src/lib/sessao.jsx, /src/pages/ConfirmarEmail.jsx, /src/pages/RedefinirSenha.jsx, /src/pages/Favoritos.jsx, /src/pages/Auth.jsx, /src/pages/Painel.jsx, /src/pages/Compartilhar.jsx, /src/pages/Configuracoes.jsx, /src/pages/Publicacao.jsx, /src/pages/Perfil.jsx, /src/components/MaterialCard.jsx, /src/components/MinhasPublicacoes.jsx, /src/components/ComentarioPublicacao.jsx, /src/pages/Admin.jsx, /src/components/CurtirMaterial.jsx, /src/components/PreviaArquivo.jsx
+08:24:13 [vite] hmr update /src/pages/RedefinirSenha.jsx, /src/index.css
+08:24:13 [vite] hmr invalidate /src/lib/sessao.jsx Could not Fast Refresh ("useSessao" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+08:24:13 [vite] hmr update /src/App.jsx, /src/index.css, /src/pages/Configuracoes.jsx, /src/components/ThemeToggle.jsx, /src/pages/RedefinirSenha.jsx, /src/pages/Auth.jsx, /src/pages/Painel.jsx, /src/components/RequireAuth.jsx, /src/pages/Perfil.jsx, /src/pages/Favoritos.jsx, /src/pages/Publicacao.jsx, /src/components/MaterialCard.jsx, /src/components/AppShell.jsx, /src/components/ComentarioPublicacao.jsx
+08:24:36 [vite] hmr update /src/pages/Auth.jsx, /src/index.css
+08:24:36 [vite] hmr update /src/pages/RedefinirSenha.jsx, /src/index.css
+08:26:16 [vite] hmr update /src/pages/RedefinirSenha.jsx, /src/index.css
+08:37:58 [vite] hmr update /src/pages/Auth.jsx, /src/index.css

@@ -25,7 +25,14 @@ public class RecuperacaoSenhaController {
   String email = dto.email().trim().toLowerCase(Locale.ROOT);
   // Supressão silenciosa por endereço evita revelar se existe uma conta.
   if (limites.permitir("envio-email:" + email, 3)) service.solicitar(email);
-  return Map.of("mensagem", "Se houver uma conta para este e-mail, enviaremos um link de redefinição.");
+  return Map.of("mensagem", "Se houver uma conta para este e-mail, enviaremos um código de redefinição.");
+ }
+ @PostMapping("/validar-codigo-senha")
+ public Map<String, String> validarCodigo(@Valid @RequestBody ValidarCodigoSenhaRequestDTO dto, HttpServletRequest req) {
+  limitar("codigo-ip:" + req.getRemoteAddr(), 20);
+  String email = dto.email().trim().toLowerCase(Locale.ROOT);
+  limitar("codigo-email:" + email, 5);
+  return Map.of("token", service.validarCodigo(email, dto.codigo()));
  }
  @PostMapping("/redefinir-senha")
  public Map<String, String> redefinir(@Valid @RequestBody RedefinirSenhaRequestDTO dto, HttpServletRequest req) {

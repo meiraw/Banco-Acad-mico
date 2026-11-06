@@ -1,54 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { GraduationCap, ArrowRight, ArrowLeft, ShieldCheck, LinkIcon } from 'lucide-react'
 import { CampoSenha } from '../components/CampoSenha.jsx'
 import { ThemeToggle } from '../components/ThemeToggle.jsx'
 import { avaliarSenha } from '../lib/academico.js'
 import { useSessao } from '../lib/sessao.jsx'
+import { lerAutorizacao, guardarAutorizacao } from '../lib/recuperacao.js'
 import { api } from '../lib/api.js'
-
-// Token de 32 bytes em Base64URL sem padding = 43 caracteres.
-const FORMATO_TOKEN = /^[A-Za-z0-9_-]{43}$/
-
-// O link do e-mail traz o token no fragmento (#token=...), que o navegador nao envia ao servidor.
-function lerToken() {
-  const valor = new URLSearchParams(window.location.hash.slice(1)).get('token')
-  return valor && FORMATO_TOKEN.test(valor) ? valor : null
-}
 
 export function RedefinirSenha() {
   const navigate = useNavigate()
   const { sair } = useSessao()
   // O token fica apenas em memoria: nunca vai para localStorage, sessionStorage ou logs.
-  const [token, setToken] = useState(lerToken)
+  const [token, setToken] = useState(lerAutorizacao)
   const [novaSenha, setNovaSenha] = useState('')
   const [confirmacao, setConfirmacao] = useState('')
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [concluido, setConcluido] = useState(false)
   const [linkExpirado, setLinkExpirado] = useState(false)
-
-  // Remove o fragmento da barra de enderecos e do historico assim que a tela abre.
-  useEffect(() => {
-    if (window.location.hash) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search)
-    }
-  }, [])
-
-  // Se um novo link for aberto na mesma aba (muda so o fragmento), a tela relê o token.
-  useEffect(() => {
-    function aoMudarFragmento() {
-      const novo = lerToken()
-      if (!novo) return
-      setToken(novo)
-      setConcluido(false)
-      setLinkExpirado(false)
-      setErro('')
-      window.history.replaceState(null, '', window.location.pathname + window.location.search)
-    }
-    window.addEventListener('hashchange', aoMudarFragmento)
-    return () => window.removeEventListener('hashchange', aoMudarFragmento)
-  }, [])
 
   async function enviar(e) {
     e.preventDefault()
@@ -63,13 +33,14 @@ export function RedefinirSenha() {
       setEnviando(true)
       await api.redefinirSenha(token, novaSenha)
       // Descarta o token e qualquer sessao local; nao ha login automatico.
+      guardarAutorizacao(null)
       setToken(null)
       setNovaSenha('')
       setConfirmacao('')
       sair()
       setConcluido(true)
     } catch (error) {
-      if (error.status === 400) { setToken(null); setLinkExpirado(true) } // token invalido, expirado ou ja usado
+      if (error.status === 400) { guardarAutorizacao(null); setToken(null); setLinkExpirado(true) } // token invalido, expirado ou ja usado
       else if (error.status === 429) setErro('Muitas tentativas. Aguarde até 15 minutos e tente de novo.')
       else setErro(error.message)
     } finally { setEnviando(false) }
@@ -108,15 +79,15 @@ export function RedefinirSenha() {
           <div className="card-surface space-y-4 p-6">
             <LinkIcon className="size-8 text-destructive" />
             <div>
-              <h1 className="text-xl font-semibold">{linkExpirado ? 'Link inválido ou expirado' : 'Link de redefinição incompleto'}</h1>
+              <h1 className="text-xl font-semibold">{linkExpirado ? 'Autorização expirada' : 'Valide seu código primeiro'}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {linkExpirado
-                  ? 'Este link já foi usado ou passou de 15 minutos. Peça um novo link para continuar.'
-                  : 'Abra o link completo que enviamos ao seu e-mail ou peça um novo link.'}
+                  ? 'Peça um novo código para continuar.'
+                  : 'Valide o código recebido por e-mail para continuar.'}
               </p>
             </div>
             <button className="btn btn-primary w-full" onClick={() => navigate('/auth', { replace: true, state: { aba: 'recuperar' } })}>
-              Pedir novo link <ArrowRight className="size-4" />
+              Pedir novo código <ArrowRight className="size-4" />
             </button>
             <Link to="/auth" className="label-mono flex w-full items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-primary">
               <ArrowLeft className="size-3.5" /> Voltar para o login

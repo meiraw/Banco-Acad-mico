@@ -34,17 +34,32 @@ public class RecuperacaoSenhaService {
   var conta = usuarios.findByEmail(endereco);
   if (conta.isEmpty()) return;
   UsuarioModel usuario = usuarios.bloquearPorId(conta.get().getId()).orElseThrow();
-  byte[] bytes = new byte[32]; random.nextBytes(bytes);
-  String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+  String token = String.format(Locale.ROOT, "%04d", random.nextInt(10_000));
   jdbc.update("DELETE FROM recuperacoes_senha WHERE usuario_id = ? OR expira_em <= ?",
       usuario.getId(), Timestamp.from(Instant.now()));
   jdbc.update("INSERT INTO recuperacoes_senha(token_hash, usuario_id, expira_em) VALUES (?, ?, ?)",
-      hash(token), usuario.getId(), Timestamp.from(Instant.now().plusSeconds(900)));
+      hash("codigo:" + usuario.getEmail() + ":" + token), usuario.getId(), Timestamp.from(Instant.now().plusSeconds(900)));
   try { email.enviar(usuario.getEmail(), token); }
   catch (MailException ex) {
    jdbc.update("DELETE FROM recuperacoes_senha WHERE usuario_id = ?", usuario.getId());
    org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha no envio de recuperação de senha pelo SMTP.");
   }
+ }
+ @Transactional
+ public String validarCodigo(String endereco, String codigo) {
+  if (codigo == null || !codigo.matches("[0-9]{4}")) throw invalido();
+  var conta = usuarios.findByEmail(endereco);
+  if (conta.isEmpty()) throw invalido();
+  var usuario = usuarios.bloquearPorId(conta.get().getId()).orElseThrow(RecuperacaoSenhaService::invalido);
+  String codigoHash = hash("codigo:" + endereco + ":" + codigo);
+  var expiracoes = jdbc.query("SELECT expira_em FROM recuperacoes_senha WHERE token_hash = ? AND usuario_id = ?",
+      (rs, n) -> rs.getTimestamp(1).toInstant(), codigoHash, usuario.getId());
+  if (expiracoes.isEmpty() || !expiracoes.getFirst().isAfter(Instant.now())) throw invalido();
+  byte[] bytes = new byte[32]; random.nextBytes(bytes);
+  String autorizacao = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+  jdbc.update("UPDATE recuperacoes_senha SET token_hash = ? WHERE token_hash = ? AND usuario_id = ?",
+      hash(autorizacao), codigoHash, usuario.getId());
+  return autorizacao;
  }
  @Transactional
  public void redefinir(String token, String senha) {

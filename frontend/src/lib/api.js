@@ -41,6 +41,7 @@ export const api = {
   confirmarEmail: token => req('/auth/confirmar-email', { method: 'POST', publico: true, ...json({ token }) }),
   reenviarConfirmacao: email => req('/auth/reenviar-confirmacao', { method: 'POST', publico: true, ...json({ email }) }),
   esqueciSenha: email => req('/auth/esqueci-senha', { method: 'POST', publico: true, ...json({ email }) }),
+  validarCodigoSenha: (email, codigo) => req('/auth/validar-codigo-senha', { method: 'POST', publico: true, ...json({ email, codigo }) }),
   redefinirSenha: (token, novaSenha) => req('/auth/redefinir-senha', { method: 'POST', publico: true, ...json({ token, novaSenha }) }),
   cursos: () => req('/curso'),
   semestres: () => req('/semestres').then(s => s.sort((a, b) => a.numero - b.numero || a.nome.localeCompare(b.nome))),

@@ -39,8 +39,8 @@ class RecuperacaoSenhaTests {
  }
  @Test void cadastradoRecebeTokenSeguroSomenteHashComQuinzeMinutos() {
   service.solicitar(usuario.getEmail());
-  assertTrue(token.matches("[A-Za-z0-9_-]{43}"));
-  assertEquals(RecuperacaoSenhaService.hash(token), jdbc.queryForObject("SELECT token_hash FROM recuperacoes_senha", String.class));
+  assertTrue(token.matches("[0-9]{4}"));
+  assertEquals(RecuperacaoSenhaService.hash("codigo:" + usuario.getEmail() + ":" + token), jdbc.queryForObject("SELECT token_hash FROM recuperacoes_senha", String.class));
   Instant exp = jdbc.queryForObject("SELECT expira_em FROM recuperacoes_senha", Timestamp.class).toInstant();
   assertTrue(exp.isAfter(Instant.now().plusSeconds(890)) && exp.isBefore(Instant.now().plusSeconds(901)));
  }
@@ -51,7 +51,7 @@ class RecuperacaoSenhaTests {
  @Test void validoTrocaSenhaInvalidaPendentesEJwtEImpedeReuso() {
   TokenService jwt = new TokenService(AuthenticationTests.SECRET);
   String antigo = jwt.gerarToken(usuario);
-  service.solicitar(usuario.getEmail()); String usado = token;
+  service.solicitar(usuario.getEmail()); String usado = service.validarCodigo(usuario.getEmail(), token);
   jdbc.update("INSERT INTO recuperacoes_senha VALUES (?, ?, ?)", RecuperacaoSenhaService.hash("B".repeat(43)), usuario.getId(), Timestamp.from(Instant.now().plusSeconds(900)));
   service.redefinir(usado, "NovaSenha123!");
   assertTrue(encoder.matches("NovaSenha123!", usuario.getSenha()));
@@ -74,6 +74,7 @@ class RecuperacaoSenhaTests {
  @Test void expiradoInvalidoEMalformadoNaoAlteramSenha() {
   service.solicitar(usuario.getEmail());
   jdbc.update("UPDATE recuperacoes_senha SET expira_em = ?", Timestamp.from(Instant.now().minusSeconds(1)));
+  assertThrows(ResponseStatusException.class, () -> service.validarCodigo(usuario.getEmail(), token));
   for (String t : new String[]{token, "A".repeat(43), "invalido"})
    assertThrows(ResponseStatusException.class, () -> service.redefinir(t, "NovaSenha123!"));
   verify(usuarios, never()).saveAndFlush(any());
@@ -82,6 +83,7 @@ class RecuperacaoSenhaTests {
  @Test void novaSolicitacaoInvalidaAnteriorEFalhaSmtpNaoVazaConta() {
   service.solicitar(usuario.getEmail()); String anterior = token;
   service.solicitar(usuario.getEmail()); assertNotEquals(anterior, token);
+  assertThrows(ResponseStatusException.class, () -> service.validarCodigo(usuario.getEmail(), anterior));
   assertThrows(ResponseStatusException.class, () -> service.redefinir(anterior, "NovaSenha123!"));
   doThrow(new MailSendException("falha")).when(mail).enviar(anyString(), anyString());
   assertDoesNotThrow(() -> service.solicitar(usuario.getEmail()));
@@ -104,6 +106,21 @@ class RecuperacaoSenhaTests {
  }
  @Test void rejeitaSenhaAcimaDoLimiteBcryptEmBytes() {
   service.solicitar(usuario.getEmail());
-  assertThrows(ResponseStatusException.class, () -> service.redefinir(token, "á".repeat(37)));
+  String autorizacao = service.validarCodigo(usuario.getEmail(), token);
+  assertThrows(ResponseStatusException.class, () -> service.redefinir(autorizacao, "á".repeat(37)));
+ }
+ @Test void codigoExigeEmailCorretoENaoPodeSerReutilizado() {
+  service.solicitar(usuario.getEmail());
+  String codigo = token;
+  assertThrows(ResponseStatusException.class, () -> service.validarCodigo("outra@example.org", codigo));
+  assertThrows(ResponseStatusException.class, () -> service.validarCodigo(usuario.getEmail(), "invalido"));
+  String errado = codigo.equals("0000") ? "1111" : "0000";
+  assertThrows(ResponseStatusException.class, () -> service.validarCodigo(usuario.getEmail(), errado));
+  assertThrows(ResponseStatusException.class, () -> service.redefinir(codigo, "NovaSenha123!"));
+  String autorizacao = service.validarCodigo(usuario.getEmail(), codigo);
+  assertTrue(autorizacao.matches("[A-Za-z0-9_-]{43}"));
+  assertThrows(ResponseStatusException.class, () -> service.validarCodigo(usuario.getEmail(), codigo));
+  service.redefinir(autorizacao, "NovaSenha123!");
+  assertTrue(encoder.matches("NovaSenha123!", usuario.getSenha()));
  }
 }

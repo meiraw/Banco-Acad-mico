@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Mail, User, ArrowRight, ArrowLeft, MailCheck } from 'lucide-react'
 import { AuthLayout } from '../components/AuthLayout.jsx'
@@ -6,6 +6,7 @@ import { CampoSenha } from '../components/CampoSenha.jsx'
 import { isEmailValido } from '../lib/academico.js'
 import { CURSO_ACADEMICO, validarCadastro } from '../lib/cadastro.js'
 import { useSessao } from '../lib/sessao.jsx'
+import { guardarAutorizacao } from '../lib/recuperacao.js'
 import { api } from '../lib/api.js'
 
 export function Auth() {
@@ -23,6 +24,14 @@ export function Auth() {
   const envioEmCurso = useRef(false)
   const [erro, setErro] = useState(location.state?.mensagem || '')
   const [enviando, setEnviando] = useState(false)
+  const [aguardarReenvio, setAguardarReenvio] = useState(0)
+  const [avisoReenvio, setAvisoReenvio] = useState('')
+  useEffect(() => {
+    if (aguardarReenvio <= 0) return
+    const timer = setTimeout(() => setAguardarReenvio(valor => Math.max(0, valor - 1)), 1000)
+    return () => clearTimeout(timer)
+  }, [aguardarReenvio])
+  const [codigo, setCodigo] = useState('')
   const [emailEnviado, setEmailEnviado] = useState(false)
 
   async function enviar(e) {
@@ -38,6 +47,8 @@ export function Auth() {
         envioEmCurso.current = true
         setEnviando(true)
         await api.esqueciSenha(email.trim().toLowerCase())
+        setAguardarReenvio(60)
+        setAvisoReenvio('')
         setEmailEnviado(true) // A resposta e sempre generica: nao revela se a conta existe.
       } catch (error) { setErro(error.status === 429 ? 'Muitas tentativas. Aguarde até 15 minutos e tente de novo.' : error.message) }
       finally { setEnviando(false); envioEmCurso.current = false }
@@ -72,21 +83,58 @@ export function Auth() {
     finally { setEnviando(false); envioEmCurso.current = false }
   }
 
+  async function reenviarCodigo() {
+    if (envioEmCurso.current || aguardarReenvio > 0) return
+    envioEmCurso.current = true
+    setEnviando(true)
+    setErro('')
+    setAvisoReenvio('')
+    try {
+      await api.esqueciSenha(email.trim().toLowerCase())
+      setCodigo('')
+      setAguardarReenvio(60)
+      setAvisoReenvio('Se houver uma conta para este e-mail, enviaremos um novo código. Confira também o spam e use o código mais recente.')
+    } catch (error) { setErro(error.message) }
+    finally { setEnviando(false); envioEmCurso.current = false }
+  }
+
+  async function validarCodigo(e) {
+    e.preventDefault()
+    if (envioEmCurso.current) return
+    envioEmCurso.current = true
+    setEnviando(true)
+    setErro('')
+    try {
+      const { token } = await api.validarCodigoSenha(email.trim().toLowerCase(), codigo)
+      guardarAutorizacao(token)
+      navigate('/redefinir-senha')
+    } catch (error) { setErro(error.message) }
+    finally { setEnviando(false); envioEmCurso.current = false }
+  }
+
   return (
     <AuthLayout dividido={aba !== 'recuperar'}>
         {aba === 'recuperar' && emailEnviado ? (
-          <div className="card-surface space-y-4 p-6">
+          <form onSubmit={validarCodigo} className="card-surface space-y-4 p-6">
             <MailCheck className="size-8 text-secondary" />
             <div>
               <h1 className="text-xl font-semibold">Verifique seu e-mail</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Se houver uma conta para <span className="font-medium text-foreground">{email.trim().toLowerCase()}</span>, enviamos um link de redefinição. O link vale por 15 minutos e só pode ser usado uma vez.
-              </p>
+                Se houver uma conta para <span className="font-medium text-foreground">{email.trim().toLowerCase()}</span>, enviamos um código de 4 dígitos, válido por 15 minutos.</p>
             </div>
-            <button className="btn btn-outline w-full" onClick={() => { setEmailEnviado(false); setAba('login'); setErro('') }}>
-              <ArrowLeft className="size-4" /> Voltar para o login
+            <label htmlFor="codigo-recuperacao" className="label-mono block">Código recebido por e-mail</label>
+            <input id="codigo-recuperacao" className="input-base" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{4}" maxLength={4} disabled={enviando} required value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, ''))} />
+            {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
+            <button disabled={enviando} className="btn btn-primary w-full">{enviando ? 'Validando...' : 'Validar código e continuar'}</button>
+            {avisoReenvio && <p role="status" className="text-sm text-muted-foreground">{avisoReenvio}</p>}
+            <p className="text-sm text-muted-foreground">Não recebeu? Confira o spam ou reenvie o código.</p>
+            <button type="button" disabled={enviando || aguardarReenvio > 0} className="btn btn-outline w-full" onClick={reenviarCodigo}>
+              {aguardarReenvio > 0 ? `Reenviar código em ${aguardarReenvio}s` : 'Reenviar código'}
             </button>
-          </div>
+            <button type="button" disabled={enviando} className="btn btn-outline w-full" onClick={() => { setEmailEnviado(false); setCodigo(''); setErro('') }}>
+              <ArrowLeft className="size-4" /> Alterar e-mail
+            </button>
+          </form>
         ) : (
           <form onSubmit={enviar} className="card-surface space-y-4 p-6">
             <fieldset disabled={enviando} className="min-w-0 space-y-4">
@@ -140,7 +188,7 @@ export function Auth() {
             {erro && <p className="text-sm text-destructive" role="alert">{erro}</p>}
 
             <button type="submit" disabled={enviando} className="btn btn-primary w-full">
-              {enviando ? (aba === 'cadastro' ? 'Criando sua conta…' : 'Enviando…') : aba === 'login' ? 'Entrar no portal' : aba === 'cadastro' ? 'Criar minha conta' : 'Enviar link de redefinição'}
+              {enviando ? (aba === 'cadastro' ? 'Criando sua conta…' : 'Enviando…') : aba === 'login' ? 'Entrar no portal' : aba === 'cadastro' ? 'Criar minha conta' : 'Enviar código de redefinição'}
               <ArrowRight className="size-4" />
             </button>
 
