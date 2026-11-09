@@ -14,6 +14,26 @@ import java.time.Instant;
 @Table(name = "materiais")
 
 public class MaterialModel {
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private br.wm.banco.academico.Enum.TipoPublicacao tipoPublicacao;
+
+    @Column(length = 500)
+    private String referenciaBibliografica;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private br.wm.banco.academico.Enum.StatusModeracao statusModeracao = br.wm.banco.academico.Enum.StatusModeracao.PENDENTE;
+
+    private Instant decisaoEm;
+
+    @ManyToOne
+    @JoinColumn(name = "moderador_id")
+    private UsuarioModel moderador;
+
+    @Column(length = 2000)
+    private String justificativaRejeicao;
+
     @ManyToOne
     @JoinColumn(name = "autor_id")
     private UsuarioModel autor;

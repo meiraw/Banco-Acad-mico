@@ -7,7 +7,9 @@ export function PreviaArquivo({ material, categoriaTipo }) {
 
   return (
     <div className="relative h-32 w-full overflow-hidden border-b border-border bg-surface-container">
-      {categoriaTipo === 'PDF' ? (
+      {material.statusModeracao && material.statusModeracao !== 'APROVADO' ? (
+        <div className="flex size-full items-center justify-center px-4 text-center text-sm text-muted-foreground">Abra a publicação para visualizar o arquivo.</div>
+      ) : categoriaTipo === 'PDF' ? (
         <iframe
           src={`${url}#toolbar=0&navpanes=0&view=FitH`}
           title={`Prévia de ${material.titulo}`}

@@ -7,6 +7,9 @@ import { api, categoria, tamanho, rotuloSemestre } from '../lib/api.js'
 import { useFavoritos } from '../lib/useFavoritos.js'
 import { CurtirMaterial } from '../components/CurtirMaterial.jsx'
 import { ComentarioPublicacao } from '../components/ComentarioPublicacao.jsx'
+import { StatusModeracao } from '../components/StatusModeracao.jsx'
+import { DadosPublicacao } from '../components/DadosPublicacao.jsx'
+import { useArquivoMaterial } from '../lib/useArquivoMaterial.js'
 
 const data = valor => valor ? new Date(valor).toLocaleString('pt-BR') : ''
 
@@ -80,7 +83,7 @@ export function Publicacao() {
   const disciplina = disciplinas.find(d => d.id === material?.disciplinaId)
   const semestre = semestres.find(s => s.id === disciplina?.semestreId)
   const curso = cursos.find(c => c.id === semestre?.cursoId)
-  const url = material && api.urlArquivo(material.id)
+  const { url, erro: erroArquivo } = useArquivoMaterial(material)
   const cat = material && categoria(material.tipoArquivo)
   const imagemSegura = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(material?.tipoArquivo)
 
@@ -93,6 +96,8 @@ export function Publicacao() {
         <header className="space-y-4 p-5 sm:p-8">
           <p className="label-mono text-secondary">{[curso?.nome, semestre && rotuloSemestre(semestre), disciplina?.nome].filter(Boolean).join(' · ')}</p>
           <h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{material.titulo}</h1>
+          <StatusModeracao material={material} />
+          <DadosPublicacao material={material} />
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Avatar nome={material.autorNome} className="size-10" />
@@ -112,13 +117,13 @@ export function Publicacao() {
           <p className="whitespace-pre-wrap break-words text-muted-foreground">{material.descricao}</p>
         </header>
         <div className="border-y border-border bg-surface-container">
-          {cat === 'PDF' ? <iframe src={url} title={material.titulo} className="h-[70vh] min-h-80 w-full" />
+          {erroArquivo ? <p role="alert" className="p-5 text-destructive">{erroArquivo}</p> : !url ? <p role="status" className="p-5">Carregando arquivo…</p> : cat === 'PDF' ? <iframe src={url} title={material.titulo} className="h-[70vh] min-h-80 w-full" />
             : imagemSegura ? <img src={url} alt={material.titulo} className="mx-auto max-h-[70vh] max-w-full object-contain" />
               : <p className="p-10 text-center text-muted-foreground">A prévia deste formato não está disponível. Baixe o arquivo para ver o conteúdo.</p>}
         </div>
         <footer className="flex flex-wrap items-center justify-between gap-4 p-5">
-          <p className="min-w-0 break-all text-sm text-muted-foreground">{material.nomeArquivo} · {tamanho(material.tamanhoArquivo)}</p>
-          <a href={`${url}?download=true`} download={material.nomeArquivo} className="btn btn-primary"><Download className="size-4" /> Baixar material</a>
+          <p className="min-w-0 break-all text-sm text-muted-foreground">Tipo de Arquivo: {cat} · {material.nomeArquivo} · {tamanho(material.tamanhoArquivo)}</p>
+          {url && <a href={url.startsWith('blob:') ? url : `${url}?download=true`} download={material.nomeArquivo} className="btn btn-primary"><Download className="size-4" /> Baixar material</a>}
         </footer>
       </article>
 

@@ -20,12 +20,18 @@ const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: J
 const lista = p => req(`${p}?size=500`).then(page => page.content)
 
 export const api = {
+  materiaisPendentes: (pagina = 0) => req(`/admin/materiais/pendentes?pagina=${pagina}`),
+  aprovarMaterial: id => req(`/admin/materiais/${id}/aprovar`, { method: 'PATCH' }),
+  rejeitarMaterial: (id, justificativa) => req(`/admin/materiais/${id}/rejeitar`, { method: 'PATCH', ...json({ justificativa }) }),
+  arquivoMaterial: id => req(`/material/${id}/arquivo`, { resposta: 'blob' }),
   material: id => req(`/material/${id}`),
   comentarios: (id, pagina = 0) => req(`/material/${id}/comentarios?pagina=${pagina}`),
   comentar: (id, texto) => req(`/material/${id}/comentarios`, { method: 'POST', ...json({ texto }) }),
   curtida: id => req(`/material/${id}/curtida`),
   curtir: id => req(`/material/${id}/curtida`, { method: 'PUT' }),
   descurtir: id => req(`/material/${id}/curtida`, { method: 'DELETE' }),
+  registrarDeslike: id => req(`/material/${id}/deslike`, { method: 'PUT' }),
+  removerDeslike: id => req(`/material/${id}/deslike`, { method: 'DELETE' }),
   respostas: (id, comentarioId, pagina = 0) => req(`/material/${id}/comentarios/${comentarioId}/respostas?pagina=${pagina}`),
   responder: (id, comentarioId, texto, respostaPaiId) => req(`/material/${id}/comentarios/${comentarioId}/respostas`, { method: 'POST', ...json({ texto, ...(respostaPaiId ? { respostaPaiId } : {}) }) }),
   meuPerfil: () => req('/perfil'),

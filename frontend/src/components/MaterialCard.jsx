@@ -5,6 +5,8 @@ import { useFavoritos } from '../lib/useFavoritos.js'
 import { PreviaArquivo } from './PreviaArquivo.jsx'
 import { Link } from 'react-router-dom'
 import { Avatar } from './Avatar.jsx'
+import { StatusModeracao } from './StatusModeracao.jsx'
+import { rotuloTipoPublicacao } from '../lib/tipoPublicacao.js'
 
 const ICONES = { PDF: FileText, Slides: Presentation, Imagem: ImageIcon, Outro: FileQuestion }
 
@@ -20,6 +22,7 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
         <PreviaArquivo material={material} categoriaTipo={cat} />
       </Link>
       <div className="flex flex-1 flex-col gap-3 p-4">
+        <StatusModeracao material={material} />
         <div className="flex items-start justify-between gap-2">
           {semestreIndice != null ? (
             <span className="label-mono w-fit rounded-md px-2 py-1 font-semibold text-neutral-900" style={{ backgroundColor: corSemestre(semestreIndice) }}>
@@ -61,6 +64,7 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
         </span>
 
         <p className="line-clamp-2 text-sm text-muted-foreground">{material.descricao}</p>
+        <p className="text-sm text-muted-foreground">Tipo de Publicação: {rotuloTipoPublicacao(material.tipoPublicacao)}</p>
 
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
           <span className="label-mono flex items-center gap-1.5 text-muted-foreground">

@@ -1,10 +1,13 @@
 import { X, Download, Trash2 } from 'lucide-react'
-import { api, categoria, tamanho } from '../lib/api.js'
+import { categoria, tamanho } from '../lib/api.js'
+import { useArquivoMaterial } from '../lib/useArquivoMaterial.js'
+import { DadosPublicacao } from './DadosPublicacao.jsx'
 
 export function VisualizadorMaterial({ material, disciplina, onClose, onExcluir }) {
+  const { url, erro } = useArquivoMaterial(material)
   if (!material) return null
   const cat = categoria(material.tipoArquivo)
-  const url = api.urlArquivo(material.id)
+  const imagemSegura = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(material.tipoArquivo)
 
   return (
     <div className="fixed inset-0 z-40 grid place-items-center bg-foreground/40 p-4" onMouseDown={e => e.target === e.currentTarget && onClose()}>
@@ -20,11 +23,14 @@ export function VisualizadorMaterial({ material, disciplina, onClose, onExcluir 
         </header>
 
         <p className="mt-4 text-sm text-muted-foreground">{material.descricao}</p>
+        <div className="mt-3"><DadosPublicacao material={material} /></div>
 
         <div className="mt-4 overflow-hidden rounded-lg border border-border bg-surface-container">
-          {cat === 'PDF' && <iframe src={url} title={material.titulo} className="h-[60vh] w-full" />}
-          {cat === 'Imagem' && <img src={url} alt={material.titulo} className="mx-auto max-h-[60vh] object-contain" />}
-          {(cat === 'Slides' || cat === 'Outro') && (
+          {erro && <p role="alert" className="p-4 text-destructive">{erro}</p>}
+          {!url && !erro && <p role="status" className="p-4">Carregando arquivo…</p>}
+          {url && cat === 'PDF' && <iframe src={url} title={material.titulo} className="h-[60vh] w-full" />}
+          {url && imagemSegura && <img src={url} alt={material.titulo} className="mx-auto max-h-[60vh] object-contain" />}
+          {cat !== 'PDF' && !imagemSegura && (
             <p className="p-8 text-center text-muted-foreground">Este formato não tem prévia. Baixe o arquivo para abrir.</p>
           )}
         </div>
@@ -35,7 +41,7 @@ export function VisualizadorMaterial({ material, disciplina, onClose, onExcluir 
               <Trash2 className="size-4" /> Excluir
             </button>
           )}
-          <a href={url} download={material.nomeArquivo} className="btn btn-primary"><Download className="size-4" /> Baixar arquivo</a>
+          {url && <a href={url.startsWith('blob:') ? url : `${url}?download=true`} download={material.nomeArquivo} className="btn btn-primary"><Download className="size-4" /> Baixar arquivo</a>}
         </footer>
       </div>
     </div>

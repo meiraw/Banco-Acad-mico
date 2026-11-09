@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { UploadCloud, ShieldAlert } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
 import { api, rotuloSemestre } from '../lib/api.js'
+import { TIPOS_PUBLICACAO, dadosPublicacao, permiteReferencia, rotuloTipoPublicacao } from '../lib/tipoPublicacao.js'
 
 export function Compartilhar() {
   const navigate = useNavigate()
@@ -17,7 +18,7 @@ export function Compartilhar() {
   const [disciplinaId, setDisciplinaId] = useState('')
   const [arquivo, setArquivo] = useState(null)
   const [referencia, setReferencia] = useState('')
-  const [protegido, setProtegido] = useState(false)
+  const [tipoPublicacao, setTipoPublicacao] = useState('')
   const [autoral, setAutoral] = useState(false)
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -42,13 +43,13 @@ export function Compartilhar() {
     if (!disciplinasVisiveis.some(d => d.id === disciplinaId)) { setErro('Selecione a disciplina.'); return }
     if (!arquivo) { setErro('Selecione o arquivo do material.'); return }
     if (arquivo.size > 20 * 1024 * 1024) { setErro('O arquivo deve ter até 20 MB.'); return }
-    if (protegido && referencia.trim().length < 10) { setErro('Como o material é protegido por direitos autorais, a referência bibliográfica é obrigatória.'); return }
+    if (!TIPOS_PUBLICACAO.some(([valor]) => valor === tipoPublicacao)) { setErro('Selecione o tipo de publicação.'); return }
     if (!autoral) { setErro('Confirme que você é responsável pelo conteúdo enviado.'); return }
 
     setEnviando(true)
     try {
-      const material = await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId }, arquivo)
-      navigate(`/material/${material.id}`, { replace: true })
+      const material = await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId, ...dadosPublicacao(tipoPublicacao, referencia) }, arquivo)
+      navigate('/perfil', { replace: true, state: { materialEnviado: material.id } })
     } catch (err) { setErro(err.message); setEnviando(false) }
   }
 
@@ -57,6 +58,7 @@ export function Compartilhar() {
       <div className="mx-auto max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight">Compartilhar material</h1>
         <p className="mt-1 text-muted-foreground">Ajude seus colegas enviando resumos, listas, slides e anotações.</p>
+        <p className="mt-3 text-sm text-muted-foreground">Compartilhe somente materiais de sua autoria ou conteúdos cuja publicação seja permitida por autorização, licença ou outra hipótese legal aplicável.</p>
 
         <form onSubmit={enviar} className="card-surface mt-6 space-y-4 p-6">
           <div className="space-y-1.5">
@@ -97,6 +99,22 @@ export function Compartilhar() {
           </div>
 
           <div className="space-y-1.5">
+            <label htmlFor="tipo-publicacao" className="label-mono block">Tipo de Publicação</label>
+            <select id="tipo-publicacao" required value={tipoPublicacao} onChange={e => { setTipoPublicacao(e.target.value); setReferencia('') }} className="input-base">
+              <option value="">Selecione…</option>
+              {TIPOS_PUBLICACAO.map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
+            </select>
+          </div>
+
+          {permiteReferencia(tipoPublicacao) && <div className="space-y-1.5">
+            <label htmlFor="referencia" className="label-mono block">Referência Bibliográfica do {rotuloTipoPublicacao(tipoPublicacao)}</label>
+            <textarea id="referencia" value={referencia} onChange={e => setReferencia(e.target.value)} maxLength={500} rows={2}
+              aria-describedby="orientacao-referencia" placeholder="Autor, título, edição, local, editora e ano."
+              className="input-base h-auto py-2" />
+            <p id="orientacao-referencia" className="text-sm text-muted-foreground">Informe a referência bibliográfica do {tipoPublicacao === 'ARTIGO' ? 'artigo' : 'livro'} utilizado, quando aplicável.</p>
+          </div>}
+
+          <div className="space-y-1.5">
             <label htmlFor="arquivo" className="label-mono block">Arquivo (até 20 MB)</label>
             <label htmlFor="arquivo" className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border bg-surface-container px-4 py-8 text-center">
               <UploadCloud className="size-8 text-primary" />
@@ -109,18 +127,8 @@ export function Compartilhar() {
             <div className="flex items-start gap-2">
               <ShieldAlert className="mt-0.5 size-5 shrink-0 text-tertiary" />
               <p className="text-sm">
-                <strong>Direitos autorais e dados pessoais:</strong> se o material é protegido por direitos autorais, informe a referência bibliográfica. Antes de enviar provas ou trabalhos, rasure CPF, telefone, matrícula e notas pessoais.
+                <strong>Direitos autorais e dados pessoais:</strong> informar uma referência bibliográfica não concede autorização para compartilhar um livro. A classificação como Slide, Resumo ou Anotação não elimina possíveis direitos autorais de terceiros. Antes de enviar provas ou trabalhos, rasure CPF, telefone, matrícula e notas pessoais.
               </p>
-            </div>
-            <label className="label-mono flex items-center gap-2">
-              <input type="checkbox" checked={protegido} onChange={e => setProtegido(e.target.checked)} className="size-4 accent-primary" />
-              Este material é protegido por direitos autorais
-            </label>
-            <div className="space-y-1.5">
-              <label htmlFor="referencia" className="label-mono block">Referência bibliográfica {protegido ? '(obrigatória)' : '(opcional)'}</label>
-              <textarea id="referencia" value={referencia} onChange={e => setReferencia(e.target.value)} maxLength={500} rows={2} required={protegido}
-                placeholder="CORMEN, T. H. et al. Algoritmos: teoria e prática. 3. ed. Rio de Janeiro: Elsevier, 2012."
-                className="input-base h-auto py-2" />
             </div>
           </div>
 

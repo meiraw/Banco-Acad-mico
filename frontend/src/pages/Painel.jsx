@@ -77,6 +77,7 @@ export function Painel() {
 
   async function excluir(m) {
     if (!ehAdmin) return
+    if (!confirm('Excluir esta publicação e o arquivo associado? Esta ação não pode ser desfeita.')) return
     try { await api.excluirMaterial(m.id); carregar() } catch (e) { setErro(e.message) }
   }
 

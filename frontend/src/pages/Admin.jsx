@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ShieldCheck, Plus, Pencil, Trash2, GraduationCap, CalendarDays, BookOpen, Check } from 'lucide-react'
 import { Modal } from '../components/Modal.jsx'
+import { ModeracaoMateriais } from '../components/ModeracaoMateriais.jsx'
 import { api, rotuloSemestre } from '../lib/api.js'
 
 const abas = [
@@ -66,6 +67,7 @@ export function Administracao({ onGradeAtualizada }) {
         <h2 id="administracao-titulo" className="flex items-center gap-2 text-2xl font-bold tracking-tight"><ShieldCheck className="size-7 text-primary" /> Administração</h2>
         <p className="mt-2 text-muted-foreground">Organize os cursos, semestres e disciplinas da grade curricular.</p>
       </header>
+      <ModeracaoMateriais />
       <div className="grid grid-cols-3 gap-3">
         {abas.map(({ id, titulo, Icone }) => <div key={id} className="card-surface p-4"><Icone className="mb-2 size-5 text-primary" /><p className="text-2xl font-bold">{dados[id].length}</p><p className="label-mono text-muted-foreground">{titulo}</p></div>)}
       </div>

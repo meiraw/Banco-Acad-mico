@@ -7,6 +7,20 @@ import java.util.UUID;
 import java.time.Instant;
 
 public class MaterialResponseDTO {
+    private br.wm.banco.academico.Enum.TipoPublicacao tipoPublicacao;
+    private String referenciaBibliografica;
+    public br.wm.banco.academico.Enum.TipoPublicacao getTipoPublicacao() { return tipoPublicacao; }
+    public String getReferenciaBibliografica() { return referenciaBibliografica; }
+    private br.wm.banco.academico.Enum.StatusModeracao statusModeracao;
+    private Instant decisaoEm;
+    private UUID moderadorId;
+    private String justificativaRejeicao;
+    private String disciplinaNome;
+    public br.wm.banco.academico.Enum.StatusModeracao getStatusModeracao() { return statusModeracao; }
+    public Instant getDecisaoEm() { return decisaoEm; }
+    public UUID getModeradorId() { return moderadorId; }
+    public String getJustificativaRejeicao() { return justificativaRejeicao; }
+    public String getDisciplinaNome() { return disciplinaNome; }
     private String autorNome;
     private Instant publicadoEm;
     public String getAutorNome() { return autorNome; }
@@ -22,6 +36,13 @@ public class MaterialResponseDTO {
     private UUID disciplinaId;
 
     public MaterialResponseDTO(MaterialModel model){
+        this.tipoPublicacao = model.getTipoPublicacao();
+        this.referenciaBibliografica = model.getReferenciaBibliografica();
+        this.statusModeracao = model.getStatusModeracao();
+        this.decisaoEm = model.getDecisaoEm();
+        this.moderadorId = model.getModerador() == null ? null : model.getModerador().getId();
+        this.justificativaRejeicao = model.getJustificativaRejeicao();
+        this.disciplinaNome = model.getDisciplina().getNome();
         this.autorNome = model.getAutor() == null ? null : model.getAutor().getNome();
         this.publicadoEm = model.getPublicadoEm();
         this.id = model.getId();

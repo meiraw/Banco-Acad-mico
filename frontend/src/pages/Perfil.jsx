@@ -6,8 +6,10 @@ import { useSessao } from '../lib/sessao.jsx'
 import { Avatar } from '../components/Avatar.jsx'
 import { Administracao } from './Admin.jsx'
 import { MinhasPublicacoes } from '../components/MinhasPublicacoes.jsx'
+import { useLocation } from 'react-router-dom'
 
 export function Perfil() {
+  const { state } = useLocation()
   const { perfil, fotoUrl, erroPerfil, recarregarPerfil } = useSessao()
   const [arquivoFoto, setArquivoFoto] = useState(null)
   const [previaFoto, setPreviaFoto] = useState(null)
@@ -52,6 +54,7 @@ export function Perfil() {
   return (
     <AppShell cursos={cursos} semestres={semestres} rotuloSemestre={rotuloSemestre}>
       <h1 className="text-3xl font-bold tracking-tight">Seu perfil</h1>
+      {state?.materialEnviado && <p role="status" className="mt-4 text-secondary">Material enviado com sucesso! Sua publicação está aguardando aprovação de um administrador.</p>}
 
       <div className="card-surface mt-6 flex flex-col items-start gap-5 p-6 sm:flex-row sm:items-center">
         <Avatar nome={perfil?.nome} fotoUrl={previaFoto || fotoUrl} className="size-24 text-3xl ring-4 ring-background" />

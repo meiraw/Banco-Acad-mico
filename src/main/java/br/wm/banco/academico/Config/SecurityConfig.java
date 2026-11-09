@@ -32,12 +32,14 @@ public class SecurityConfig {
                         .authenticationEntryPoint((req, res, ex) -> SecurityResponse.write(res, 401))
                         .accessDeniedHandler((req, res, ex) -> SecurityResponse.write(res, 403)))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/auth/confirmar-email", "/auth/reenviar-confirmacao").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/esqueci-senha", "/auth/validar-codigo-senha", "/auth/redefinir-senha", "/usuario").permitAll()
                         .requestMatchers(HttpMethod.GET, "/perfil", "/perfil/foto", "/perfil/publicacoes").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/perfil/foto").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/usuario", "/usuario/**").hasRole("ADMIN")
-                        .requestMatchers("/material/*/curtida").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/material/*/curtida", "/material/*/deslike").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/material/*").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/curso", "/curso/**", "/semestres", "/semestres/**",
                                 "/disciplinas", "/disciplinas/**", "/material", "/material/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/material").hasAnyRole("USER", "ADMIN")
@@ -55,7 +57,7 @@ public class SecurityConfig {
             @Value("${security.cors.allowed-origins:http://localhost:5173}") List<String> origins) {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(origins);
-        cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cors);

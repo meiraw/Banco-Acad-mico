@@ -12,6 +12,20 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 public class MaterialRequestDTO {
+    @Setter
+    @NotNull(message = "Selecione o tipo de publicação.")
+    private br.wm.banco.academico.Enum.TipoPublicacao tipoPublicacao;
+
+    @Setter
+    @Size(max = 500, message = "A referência bibliográfica deve ter até 500 caracteres.")
+    private String referenciaBibliografica;
+
+    @jakarta.validation.constraints.AssertTrue(message = "A referência bibliográfica só é permitida para Livro ou Artigo.")
+    public boolean isReferenciaCompativel() {
+        return referenciaBibliografica == null || referenciaBibliografica.isBlank()
+                || tipoPublicacao == br.wm.banco.academico.Enum.TipoPublicacao.LIVRO
+                || tipoPublicacao == br.wm.banco.academico.Enum.TipoPublicacao.ARTIGO;
+    }
 
     @Setter
     @NotBlank(message = "O titulo não pode ser vazio")
@@ -27,7 +41,10 @@ public class MaterialRequestDTO {
     @NotNull
     private UUID disciplinaId;
 
-    public MaterialRequestDTO (String titulo , String descricao, UUID disciplinaId){
+    public MaterialRequestDTO (String titulo , String descricao, UUID disciplinaId,
+            br.wm.banco.academico.Enum.TipoPublicacao tipoPublicacao, String referenciaBibliografica){
+        this.tipoPublicacao = tipoPublicacao;
+        this.referenciaBibliografica = referenciaBibliografica;
         this.titulo = titulo;
         this.descricao = descricao;
         this.disciplinaId = disciplinaId;

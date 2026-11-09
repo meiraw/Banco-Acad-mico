@@ -49,7 +49,7 @@ public class MaterialController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MaterialResponseDTO> atualizarMaterial(@Valid @PathVariable UUID id , @RequestBody MaterialRequestDTO dto){
+    public ResponseEntity<MaterialResponseDTO> atualizarMaterial(@PathVariable UUID id , @Valid @RequestBody MaterialRequestDTO dto){
         MaterialModel atualizar = materialService.atualizar(dto, id);
         return ResponseEntity.ok(new MaterialResponseDTO(atualizar));
     }
@@ -66,6 +66,7 @@ public class MaterialController {
                 .filename(material.getNomeArquivo(), StandardCharsets.UTF_8).build();
         return ResponseEntity.ok()
                 .header("Content-Disposition", disposition.toString())
+                .header("Cache-Control", "private, no-store")
                 .header("X-Content-Type-Options", "nosniff")
                 .header("Content-Security-Policy", previa ? "frame-ancestors 'self'" : "sandbox; default-src 'none'")
                 .contentType(MediaType.parseMediaType(previa ? tipo : "application/octet-stream"))

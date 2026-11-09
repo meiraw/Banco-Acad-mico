@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Rolagem suave apenas na landing page; as demais rotas mantêm seu comportamento. */
+html:has(.landing-page) { scroll-behavior: smooth; }
+.landing-page section[id] { scroll-margin-top: 1.5rem; }
+.landing-page { overflow-wrap: break-word; }
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing-page) { scroll-behavior: auto; }
+}
+
 :root {
   --radius: 0.75rem;
 

@@ -109,6 +109,12 @@ class PerfilFotoTests {
                 .with(r -> { r.setMethod("PUT"); return r; }).header("Authorization", bearer(usuario)))
                 .andExpect(status().isOk());
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM fotos_perfil", Integer.class));
+        byte[] novaFoto = mvc.perform(get("/perfil/foto").header("Authorization", bearer(usuario)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        assertFalse(java.util.Arrays.equals(resposta, novaFoto));
+        var atual = ImageIO.read(new ByteArrayInputStream(novaFoto));
+        assertEquals(40, atual.getWidth()); assertEquals(40, atual.getHeight());
+        assertArrayEquals(novaFoto, jdbc.queryForObject("SELECT conteudo FROM fotos_perfil WHERE usuario_id = ?", byte[].class, usuario.getId()));
         mvc.perform(get("/perfil").header("Authorization", bearer(usuario)))
                 .andExpect(jsonPath("possuiFoto").value(true));
     }
@@ -118,6 +124,16 @@ class PerfilFotoTests {
         mvc.perform(multipart("/perfil/foto").file(imagem("png", 20, 20))
                 .with(r -> { r.setMethod("PUT"); return r; }).header("Authorization", bearer(usuario)))
                 .andExpect(status().isOk());
+    }
+
+    @Test void trocaInvalidaMantemFotoAtual() throws Exception {
+        mvc.perform(multipart("/perfil/foto").file(imagem("png", 30, 30))
+            .with(r -> { r.setMethod("PUT"); return r; }).header("Authorization", bearer(usuario))).andExpect(status().isOk());
+        byte[] anterior = jdbc.queryForObject("SELECT conteudo FROM fotos_perfil WHERE usuario_id = ?", byte[].class, usuario.getId());
+        mvc.perform(multipart("/perfil/foto").file(new MockMultipartFile("foto", "invalida.png", "image/png", "inválido".getBytes(StandardCharsets.UTF_8)))
+            .with(r -> { r.setMethod("PUT"); return r; }).header("Authorization", bearer(usuario))).andExpect(status().isBadRequest());
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM fotos_perfil", Integer.class));
+        assertArrayEquals(anterior, jdbc.queryForObject("SELECT conteudo FROM fotos_perfil WHERE usuario_id = ?", byte[].class, usuario.getId()));
     }
 
     @Test void anonimoNaoAcessaNemAlteraFotos() throws Exception {

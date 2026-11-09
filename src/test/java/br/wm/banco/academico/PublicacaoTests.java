@@ -18,7 +18,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -49,11 +49,11 @@ class PublicacaoTests {
         @Bean MaterialService materiais() { return mock(MaterialService.class); }
         @Bean TokenService tokens() { return new TokenService(AuthenticationTests.SECRET); }
         @Bean JdbcTemplate jdbc() throws Exception {
-            var jdbc = new JdbcTemplate(new DriverManagerDataSource(
-                    "jdbc:h2:mem:publicacoes;MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "sa", ""));
+            var jdbc = new JdbcTemplate(new SingleConnectionDataSource(
+                    "jdbc:h2:mem:publicacoes;MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "sa", "", true));
             jdbc.execute("CREATE TABLE usuarios(id UUID PRIMARY KEY, nome VARCHAR(200))");
             jdbc.execute("CREATE TABLE materiais(id UUID PRIMARY KEY, titulo VARCHAR(255))");
-            for (String migration : List.of("V11__publicacoes_e_comentarios.sql", "V12__curtidas_e_respostas.sql", "V13__conversa_entre_respostas.sql")) {
+            for (String migration : List.of("V11__publicacoes_e_comentarios.sql", "V12__curtidas_e_respostas.sql", "V13__conversa_entre_respostas.sql", "V18__reacoes_negativas.sql")) {
             try (var stream = PublicacaoTests.class.getResourceAsStream("/db/migration/" + migration)) {
                 for (String sql : new String(stream.readAllBytes(), StandardCharsets.UTF_8).split(";"))
                     if (!sql.isBlank()) jdbc.execute(sql);
@@ -129,6 +129,30 @@ class PublicacaoTests {
         mvc.perform(get(path).header("Authorization", outroBearer)).andExpect(jsonPath("curtido").value(true));
         jdbc.update("DELETE FROM materiais WHERE id = ?", id);
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM curtidas_material", Integer.class));
+    }
+
+    @Test void deslikeExigeLoginPersisteSemDuplicarETrocaReacao() throws Exception {
+        String negativo = "/material/" + id + "/deslike", positivo = "/material/" + id + "/curtida";
+        mvc.perform(get(negativo)).andExpect(status().isUnauthorized());
+        mvc.perform(put(negativo)).andExpect(status().isUnauthorized());
+        mvc.perform(delete(negativo)).andExpect(status().isUnauthorized());
+        for (var perfil : PerfilUsuario.values()) {
+            usuario.setPerfil(perfil);
+            String token = "Bearer " + tokens.gerarToken(usuario);
+            mvc.perform(put(positivo).header("Authorization", token)).andExpect(jsonPath("total").value(1));
+            for (int i = 0; i < 2; i++) mvc.perform(put(negativo).header("Authorization", token))
+                .andExpect(status().isOk()).andExpect(jsonPath("totalDeslikes").value(1)).andExpect(jsonPath("deslike").value(true))
+                .andExpect(jsonPath("total").value(0)).andExpect(jsonPath("curtido").value(false));
+            mvc.perform(get(positivo).header("Authorization", token)).andExpect(jsonPath("deslike").value(true));
+            mvc.perform(delete(positivo).header("Authorization", token)).andExpect(jsonPath("totalDeslikes").value(1));
+            for (int i = 0; i < 2; i++) mvc.perform(delete(negativo).header("Authorization", token))
+                .andExpect(jsonPath("totalDeslikes").value(0)).andExpect(jsonPath("deslike").value(false));
+            mvc.perform(put(negativo).header("Authorization", token)).andExpect(jsonPath("deslike").value(true));
+            mvc.perform(put(positivo).header("Authorization", token)).andExpect(jsonPath("total").value(1))
+                .andExpect(jsonPath("totalDeslikes").value(0)).andExpect(jsonPath("curtido").value(true));
+            mvc.perform(delete(negativo).header("Authorization", token)).andExpect(jsonPath("total").value(1));
+        }
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM curtidas_material WHERE material_id = ?", Integer.class, id));
     }
 
     @Test void respostasValidamContaTextoEVinculoComPublicacao() throws Exception {
@@ -244,7 +268,7 @@ class PublicacaoTests {
 
     @Test void consultaDoPerfilFiltraPorAutorEPaginaSemAlterarMateriais() {
         var repo = mock(MaterialRepository.class);
-        var service = new MaterialService(repo, mock(DisciplinasService.class), usuarios);
+        var service = new MaterialService(repo, mock(DisciplinasService.class), usuarios, mock(org.springframework.context.ApplicationEventPublisher.class), mock(LimpezaArquivoService.class));
         var pagina = org.springframework.data.domain.PageRequest.of(2, 12);
         when(repo.findByAutorEmailOrderByPublicadoEmDescIdDesc(usuario.getEmail(), pagina))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(material)));
@@ -299,17 +323,18 @@ class PublicacaoTests {
     @Test void publicacaoRegistraAutorEProtegeCaminhoDoArquivo() throws Exception {
         var repo = mock(MaterialRepository.class);
         var disciplinas = mock(DisciplinasService.class);
-        var service = new MaterialService(repo, disciplinas, usuarios);
+        var service = new MaterialService(repo, disciplinas, usuarios, mock(org.springframework.context.ApplicationEventPublisher.class), mock(LimpezaArquivoService.class));
         var disciplina = new DisciplinasModel(); ReflectionTestUtils.setField(disciplina, "id", UUID.randomUUID());
         when(disciplinas.buscarPorId(disciplina.getId())).thenReturn(disciplina);
         when(repo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        var criado = service.criar(new MaterialRequestDTO("Resumo", "Descrição", disciplina.getId()),
+        var criado = service.criar(new MaterialRequestDTO("Resumo", "Descrição", disciplina.getId(), br.wm.banco.academico.Enum.TipoPublicacao.RESUMO, null),
                 new MockMultipartFile("arquivo", "../../teste.pdf", "application/pdf", "%PDF".getBytes()), usuario.getEmail());
         Path arquivoCriado = Path.of(criado.getCaminhoArquivo());
         try {
             assertEquals(usuario, criado.getAutor()); assertNotNull(criado.getPublicadoEm());
             assertEquals(Path.of("Uploads"), Path.of(criado.getCaminhoArquivo()).getParent());
             when(repo.findById(id)).thenReturn(Optional.of(criado));
+            criado.setStatusModeracao(br.wm.banco.academico.Enum.StatusModeracao.APROVADO);
             assertTrue(service.arquivo(id).exists());
             criado.setCaminhoArquivo("pom.xml");
             assertThrows(ResourceNotFoundException.class, () -> service.arquivo(id));
