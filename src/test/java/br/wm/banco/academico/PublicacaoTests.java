@@ -42,7 +42,7 @@ class PublicacaoTests {
     @Configuration
     @EnableWebMvc
     @org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-    @Import({SecurityConfig.class, ComentarioMaterialController.class, MaterialController.class, PerfilMaterialController.class,
+    @Import({SecurityConfig.class, br.wm.banco.academico.Config.PaginacaoConfig.class, ComentarioMaterialController.class, MaterialController.class, PerfilMaterialController.class,
             CurtidaMaterialController.class, RespostaComentarioController.class, GlobalExpcetionHandler.class})
     static class Config {
         @Bean UsuarioRepository usuarios() { return mock(UsuarioRepository.class); }

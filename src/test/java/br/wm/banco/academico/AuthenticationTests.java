@@ -42,9 +42,8 @@ class AuthenticationTests {
     static final String SECRET = "test-only-secret-with-at-least-32-bytes";
     @Configuration
     @EnableWebMvc
-    @org.springframework.data.web.config.EnableSpringDataWebSupport
     @org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-    @Import({SecurityConfig.class, AuthController.class, UsuarioController.class, GlobalExpcetionHandler.class,
+    @Import({SecurityConfig.class, br.wm.banco.academico.Config.PaginacaoConfig.class, AuthController.class, UsuarioController.class, GlobalExpcetionHandler.class,
             br.wm.banco.academico.Controller.ConfirmacaoEmailController.class,
             br.wm.banco.academico.Controller.RecuperacaoSenhaController.class,
             br.wm.banco.academico.Controller.MaterialController.class})

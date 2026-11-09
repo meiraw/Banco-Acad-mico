@@ -19,8 +19,15 @@ async function req(path, { publico, resposta, ...opts } = {}) {
 const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 const lista = p => req(`${p}?size=500`).then(page => page.content)
 
+// VIA_DTO mantém content e agrupa os metadados em page. Preserva o contrato das telas.
+const reqPagina = path => req(path).then(resultado => {
+  if (!resultado.page) return resultado // Compatibilidade enquanto o backend é reiniciado.
+  const { content, page } = resultado
+  return { content, ...page, first: page.number === 0, last: page.number + 1 >= page.totalPages }
+})
+
 export const api = {
-  materiaisPendentes: (pagina = 0) => req(`/admin/materiais/pendentes?pagina=${pagina}`),
+  materiaisPendentes: (pagina = 0) => reqPagina(`/admin/materiais/pendentes?pagina=${pagina}`),
   aprovarMaterial: id => req(`/admin/materiais/${id}/aprovar`, { method: 'PATCH' }),
   rejeitarMaterial: (id, justificativa) => req(`/admin/materiais/${id}/rejeitar`, { method: 'PATCH', ...json({ justificativa }) }),
   arquivoMaterial: id => req(`/material/${id}/arquivo`, { resposta: 'blob' }),
@@ -35,7 +42,7 @@ export const api = {
   respostas: (id, comentarioId, pagina = 0) => req(`/material/${id}/comentarios/${comentarioId}/respostas?pagina=${pagina}`),
   responder: (id, comentarioId, texto, respostaPaiId) => req(`/material/${id}/comentarios/${comentarioId}/respostas`, { method: 'POST', ...json({ texto, ...(respostaPaiId ? { respostaPaiId } : {}) }) }),
   meuPerfil: () => req('/perfil'),
-  minhasPublicacoes: (pagina = 0) => req(`/perfil/publicacoes?pagina=${pagina}`),
+  minhasPublicacoes: (pagina = 0) => reqPagina(`/perfil/publicacoes?pagina=${pagina}`),
   fotoPerfil: () => req('/perfil/foto', { resposta: 'blob' }),
   salvarFotoPerfil: foto => {
     const dados = new FormData()
