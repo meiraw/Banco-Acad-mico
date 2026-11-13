@@ -83,6 +83,7 @@ class PublicacaoTests {
         ReflectionTestUtils.setField(usuario, "id", UUID.randomUUID());
         usuario.setNome("Maria Silva"); usuario.setEmail("maria@unemat.br"); usuario.setPerfil(PerfilUsuario.USER);
         when(usuarios.findByEmail(usuario.getEmail())).thenReturn(Optional.of(usuario));
+        when(usuarios.bloquearPorId(usuario.getId())).thenReturn(Optional.of(usuario));
         jdbc.update("INSERT INTO usuarios(id, nome) VALUES (?, ?)", usuario.getId(), usuario.getNome());
         id = UUID.randomUUID();
         jdbc.update("INSERT INTO materiais(id, titulo) VALUES (?, ?)", id, "Resumo antigo");
@@ -268,7 +269,7 @@ class PublicacaoTests {
 
     @Test void consultaDoPerfilFiltraPorAutorEPaginaSemAlterarMateriais() {
         var repo = mock(MaterialRepository.class);
-        var service = new MaterialService(repo, mock(DisciplinasService.class), usuarios, mock(org.springframework.context.ApplicationEventPublisher.class), mock(LimpezaArquivoService.class));
+        var service = serviceUpload(repo, mock(DisciplinasService.class));
         var pagina = org.springframework.data.domain.PageRequest.of(2, 12);
         when(repo.findByAutorEmailOrderByPublicadoEmDescIdDesc(usuario.getEmail(), pagina))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(material)));
@@ -307,12 +308,17 @@ class PublicacaoTests {
     }
 
     @Test void arquivoPodeSerVisualizadoEBaixadoMasHtmlNaoExecuta() throws Exception {
-        when(materiais.arquivo(id)).thenReturn(new org.springframework.core.io.ByteArrayResource("%PDF-teste".getBytes()));
+        material.setCaminhoArquivo("Uploads/validado-v1-" + UUID.randomUUID());
+        when(materiais.arquivo(id)).thenReturn(new org.springframework.core.io.ByteArrayResource(UploadFixtures.pdf()));
         mvc.perform(get("/material/" + id + "/arquivo")).andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "application/pdf"))
                 .andExpect(header().string("X-Frame-Options", "SAMEORIGIN"))
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.startsWith("inline")));
         mvc.perform(get("/material/" + id + "/arquivo?download=true"))
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.startsWith("attachment")));
+        material.setCaminhoArquivo("Uploads/" + UUID.randomUUID());
+        mvc.perform(get("/material/" + id + "/arquivo"))
+                .andExpect(header().string("Content-Type", "application/octet-stream"))
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.startsWith("attachment")));
         material.setTipoArquivo("text/html");
         mvc.perform(get("/material/" + id + "/arquivo"))
@@ -323,16 +329,16 @@ class PublicacaoTests {
     @Test void publicacaoRegistraAutorEProtegeCaminhoDoArquivo() throws Exception {
         var repo = mock(MaterialRepository.class);
         var disciplinas = mock(DisciplinasService.class);
-        var service = new MaterialService(repo, disciplinas, usuarios, mock(org.springframework.context.ApplicationEventPublisher.class), mock(LimpezaArquivoService.class));
+        var service = serviceUpload(repo, disciplinas);
         var disciplina = new DisciplinasModel(); ReflectionTestUtils.setField(disciplina, "id", UUID.randomUUID());
         when(disciplinas.buscarPorId(disciplina.getId())).thenReturn(disciplina);
         when(repo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        var criado = service.criar(new MaterialRequestDTO("Resumo", "Descrição", disciplina.getId(), br.wm.banco.academico.Enum.TipoPublicacao.RESUMO, null),
-                new MockMultipartFile("arquivo", "../../teste.pdf", "application/pdf", "%PDF".getBytes()), usuario.getEmail());
+        var criado = service.criar(UploadFixtures.dados("Resumo", "Descrição", disciplina.getId(), br.wm.banco.academico.Enum.TipoPublicacao.RESUMO, null),
+                new MockMultipartFile("arquivo", "../../teste.pdf", "application/pdf", UploadFixtures.pdf()), usuario.getEmail());
         Path arquivoCriado = Path.of(criado.getCaminhoArquivo());
         try {
             assertEquals(usuario, criado.getAutor()); assertNotNull(criado.getPublicadoEm());
-            assertEquals(Path.of("Uploads"), Path.of(criado.getCaminhoArquivo()).getParent());
+            assertEquals(Path.of("Uploads").toAbsolutePath().normalize(), Path.of(criado.getCaminhoArquivo()).getParent());
             when(repo.findById(id)).thenReturn(Optional.of(criado));
             criado.setStatusModeracao(br.wm.banco.academico.Enum.StatusModeracao.APROVADO);
             assertTrue(service.arquivo(id).exists());
@@ -341,5 +347,10 @@ class PublicacaoTests {
         } finally {
             Files.deleteIfExists(arquivoCriado);
         }
+    }
+    private MaterialService serviceUpload(MaterialRepository repo, DisciplinasService disciplinas) {
+        return new MaterialService(repo, disciplinas, usuarios, mock(org.springframework.context.ApplicationEventPublisher.class),
+            mock(LimpezaArquivoService.class), new ArmazenamentoService("Uploads", 0), new ValidacaoArquivoService(),
+            mock(AntimalwareService.class), new LimiteUploadService(2, 20, 104857600), 524288000);
     }
 }

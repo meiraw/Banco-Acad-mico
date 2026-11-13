@@ -29,7 +29,7 @@ public class MaterialController {
         this.materialService = materialService;
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity <MaterialResponseDTO> criar (@Valid @RequestPart("dados") MaterialRequestDTO dto, @RequestPart ("arquivo")MultipartFile arquivo, Principal principal ){
         MaterialModel material = materialService.criar(dto,arquivo,principal.getName());
         return ResponseEntity.status(201).body(new MaterialResponseDTO(material));
@@ -61,14 +61,19 @@ public class MaterialController {
         var resource = materialService.arquivo(id);
         // Apenas PDF e imagens raster podem ser exibidos dentro do navegador.
         String tipo = material.getTipoArquivo();
-        boolean previa = Set.of("application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp").contains(tipo);
+        boolean previa = br.wm.banco.academico.Service.ArmazenamentoService.validado(material.getCaminhoArquivo())
+                && tipo != null && Set.of("application/pdf", "image/jpeg", "image/png", "image/gif").contains(tipo);
+        String nomeDownload = "material-" + id;
+        try { nomeDownload = br.wm.banco.academico.Service.ValidacaoArquivoService.nomeSeguro(material.getNomeArquivo()); }
+        catch (org.springframework.web.server.ResponseStatusException ignored) { /* Metadados legados não impedem o download. */ }
         var disposition = (download || !previa ? ContentDisposition.attachment() : ContentDisposition.inline())
-                .filename(material.getNomeArquivo(), StandardCharsets.UTF_8).build();
+                .filename(nomeDownload, StandardCharsets.UTF_8).build();
         return ResponseEntity.ok()
                 .header("Content-Disposition", disposition.toString())
                 .header("Cache-Control", "private, no-store")
                 .header("X-Content-Type-Options", "nosniff")
-                .header("Content-Security-Policy", previa ? "frame-ancestors 'self'" : "sandbox; default-src 'none'")
+                .header("Content-Security-Policy", "sandbox; default-src 'none'; frame-ancestors 'self'")
+                .header("Referrer-Policy", "no-referrer")
                 .contentType(MediaType.parseMediaType(previa ? tipo : "application/octet-stream"))
                 .body(resource);
     }

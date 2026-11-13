@@ -250,7 +250,7 @@ class AuthenticationTests {
         String token = tokens.gerarToken(usuario);
         mvc.perform(post("/material")).andExpect(status().isUnauthorized());
         // Sem as partes multipart, 400 confirma que USER chegou ao controller.
-        mvc.perform(post("/material").header("Authorization", "Bearer " + token))
+        mvc.perform(multipart("/material").header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest());
         String path = "/material/00000000-0000-0000-0000-000000000001";
         mvc.perform(delete(path)).andExpect(status().isUnauthorized());

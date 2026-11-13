@@ -33,10 +33,12 @@ public class SecurityConfig {
                         .accessDeniedHandler((req, res, ex) -> SecurityResponse.write(res, 403)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/forum", "/forum/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/favoritos", "/favoritos/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/auth/confirmar-email", "/auth/reenviar-confirmacao").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/esqueci-senha", "/auth/validar-codigo-senha", "/auth/redefinir-senha", "/usuario").permitAll()
                         .requestMatchers(HttpMethod.GET, "/perfil", "/perfil/foto", "/perfil/publicacoes").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/perfil/foto").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/perfil", "/perfil/senha", "/perfil/foto").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/usuario", "/usuario/**").hasRole("ADMIN")
                         .requestMatchers("/material/*/curtida", "/material/*/deslike").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/material/*").hasAnyRole("USER", "ADMIN")

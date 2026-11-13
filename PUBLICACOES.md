@@ -16,11 +16,12 @@ sem alterar o conteúdo dos registros antigos. Materiais antigos sem autoria reg
 mostram “Autor não informado”. Novos envios registram autor e data automaticamente.
 Comentários são removidos em cascata quando o respectivo material é excluído.
 
-Os favoritos usam armazenamento local separado pelo ID de cada conta, neste navegador,
-com sincronização entre cartões, página da publicação, lista de favoritos e abas da mesma
-conta. Trocar de conta troca imediatamente a lista. Não são sincronizados entre dispositivos.
-A chave global antiga é ignorada, pois não identifica quem marcou os materiais;
-seu conteúdo não é atribuído automaticamente a nenhuma conta.
+Os favoritos são armazenados no PostgreSQL por conta autenticada, com sincronização
+entre navegadores e dispositivos após consulta à API. Cartões, publicação e lista de
+favoritos compartilham estado; a lista tem paginação própria, sem depender do catálogo
+geral. Trocar de conta descarta o estado da sessão anterior. Favoritos antigos do
+navegador são ignorados; não há aviso, botão ou rotina de importação.
+Consulte FAVORITOS.md para endpoints e operação.
 
 Reinicie o backend para aplicar a V11 e carregar os novos endpoints. A configuração e a
 senha do PostgreSQL precisam estar corretas. O frontend usa o proxy `/api` existente.
@@ -34,9 +35,9 @@ Endpoints adicionados:
 GET `/material/{id}` e a listagem agora incluem `autorNome` e `publicadoEm`, sem expor
 e-mail, senha ou outros dados da conta do autor.
 
-## Publicações no perfil
+## Minhas publicações
 
-O perfil de USER e ADMIN exibe “Minhas publicações”, com cartões que mostram disciplina,
+USER acessa “Minhas publicações” pelo botão abaixo de Fórum na barra lateral, em `/minhas-publicacoes`. ADMIN mantém a seção no Perfil. Os cartões mostram disciplina,
 semestre e curso, e abrem a página de cada material. GET `/perfil/publicacoes?pagina=0`
 exige login e consulta apenas o autor autenticado, em páginas de 12 materiais, com os
 mais recentes primeiro. Não aceita escolher outro autor. Não requer nova migration.
@@ -47,7 +48,7 @@ Materiais antigos sem `autor_id` não são atribuídos automaticamente a nenhuma
 A migration V12 adiciona curtidas por conta e respostas vinculadas aos comentários,
 preservando materiais e comentários existentes. Curtir e descurtir são operações
 idempotentes: cada conta tem no máximo uma curtida por material. O contador é público
-na interface autenticada e separado dos favoritos locais. As respostas ficam abaixo
+na interface autenticada e separado dos favoritos. As respostas ficam abaixo
 do comentário original, com autor e data; aceitam até 2000 caracteres e
 têm paginação de 50 em 50. Somente contas autenticadas podem curtir ou responder.
 

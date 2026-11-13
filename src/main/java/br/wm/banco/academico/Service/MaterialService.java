@@ -18,10 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.UUID;
 import java.time.Instant;
 import br.wm.banco.academico.Enum.StatusModeracao;
@@ -32,11 +30,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class MaterialService {
 
 
-    //Crie uma variável chamada uploadPath que representa o caminho da pasta uploads.
-    private final Path uploadPath  = Paths.get("Uploads"); // Onde fica os arquivos
-    //Path é o que representa um caminho
-    //uploadPath nome da nossa variavel
-    //uploads  nome da pasta que requeremos representar
+    private final ArmazenamentoService armazenamento;
+    private final ValidacaoArquivoService validacao;
+    private final AntimalwareService antimalware;
+    private final LimiteUploadService limites;
+    private final long cota;
 
     private final MaterialRepository materialRepository;
     private final DisciplinasService disciplinasService;// dependências
@@ -46,7 +44,13 @@ public class MaterialService {
     public MaterialService(
             MaterialRepository materialRepository,
             DisciplinasService disciplinasService,
-            UsuarioRepository usuarios, ApplicationEventPublisher eventos, LimpezaArquivoService limpeza){
+            UsuarioRepository usuarios, ApplicationEventPublisher eventos, LimpezaArquivoService limpeza,
+            ArmazenamentoService armazenamento, ValidacaoArquivoService validacao,
+            AntimalwareService antimalware, LimiteUploadService limites,
+            @org.springframework.beans.factory.annotation.Value("${app.upload.cota-usuario:524288000}") long cota){
+        this.armazenamento = armazenamento; this.validacao = validacao;
+        this.antimalware = antimalware; this.limites = limites; this.cota = cota;
+        if (cota < 1) throw new IllegalArgumentException("Cota de upload inválida.");
         this.limpeza = limpeza;
         this.eventos = eventos;
         this.usuarios = usuarios;
@@ -59,30 +63,32 @@ public class MaterialService {
     @Transactional
     public MaterialModel criar (MaterialRequestDTO dto , MultipartFile arquivo, String email) {
         validarPublicacao(dto);
+        if (!Boolean.TRUE.equals(dto.getResponsabilidadeConfirmada()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Confirme sua responsabilidade pelo conteúdo enviado.");
+        try (var permissao = limites.adquirir(email, arquivo.getSize())) {
+            return criarValidado(dto, arquivo, email);
+        }
+    }
+
+    private MaterialModel criarValidado(MaterialRequestDTO dto, MultipartFile arquivo, String email) {
+        var validado = validacao.validar(arquivo);
+        antimalware.verificar(validado.conteudo());
 
         MaterialModel material = new MaterialModel();
-        material.setAutor(usuarios.findByEmail(email).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.UNAUTHORIZED)));
+        var conta = usuarios.findByEmail(email).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        // Serializa a verificação da cota entre instâncias e uploads do mesmo autor.
+        material.setAutor(usuarios.bloquearPorId(conta.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED)));
+        long utilizado = materialRepository.bytesDoAutor(conta.getId());
+        if (validado.conteudo().length > cota - utilizado)
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Sua cota de armazenamento de materiais foi atingida.");
         material.setPublicadoEm(Instant.now());
         material.setStatusModeracao(StatusModeracao.PENDENTE);
         DisciplinasModel disciplina = disciplinasService.buscarPorId(dto.getDisciplinaId()); // Criamos o relacionamento
         // de disciplinas com o materia , então , fazemos a injeção de dependencia de disciplinas
         //depois colocamos a disciplinas no cria() de material
 
-        String nomeArquivo = arquivo.getOriginalFilename();
-        String nomeUnico = UUID.randomUUID().toString();
-        Path caminhoArquivo = uploadPath.resolve(nomeUnico);// Aqui definimos o caminho para os arquivos // Onde ficará este arquivo especificos
-        System.out.println("ARQUIVO SALVO EM: " + caminhoArquivo.toAbsolutePath());
-
-        try { // Tentar
-            Files.createDirectories(uploadPath);
-            Files.copy(
-                    arquivo.getInputStream(),//de onde //copiar um arquivo/conteúdo de um lugar para outro.
-                    caminhoArquivo // para onde
-            );
-        }catch(IOException e){ // Se der erro exiba essa imagem
-            throw new RuntimeException("Erro ao salvar o arquivo",e ); // Ocorreu esse problema; pare a execução e lance esse erro.
-        }
+        String nomeArquivo = validado.nomeSeguro();
+        Path caminhoArquivo = armazenamento.novoCaminho();
         material.setTitulo(dto.getTitulo());
         material.setDescricao(dto.getDescricao());
         aplicarPublicacao(material, dto);
@@ -90,9 +96,9 @@ public class MaterialService {
         // material.setNomeArquivo(dto.getNomeArquivo()); antes da implementação do multipartFile
         material.setNomeArquivo(nomeArquivo); //Depois  , aqui temos o getOriginalFilename , para os nomes do arquivos
         //Pega informações do arquivo
-        material.setTipoArquivo(arquivo.getContentType()); // Para os tipos de arquivos
+        material.setTipoArquivo(validado.mimeDetectado());
         material.setCaminhoArquivo(caminhoArquivo.toString());
-        material.setTamanhoArquivo(arquivo.getSize());//O tamanho do arquivo
+        material.setTamanhoArquivo((long) validado.conteudo().length);
 
         material.setDisciplina(disciplina); // esse é o set de disciplinas
 
@@ -103,14 +109,15 @@ public class MaterialService {
                 new org.springframework.transaction.support.TransactionSynchronization() {
                     @Override public void afterCompletion(int status) {
                         if (status == STATUS_ROLLED_BACK) {
-                            try { Files.deleteIfExists(caminhoArquivo); }
-                            catch (IOException ex) { org.slf4j.LoggerFactory.getLogger(MaterialService.class)
-                                    .warn("Falha ao limpar arquivo de upload revertido."); }
+                            armazenamento.remover(caminhoArquivo);
                         }
                     }
                 });
         }
-        MaterialModel salvo = materialRepository.save(material);
+        armazenamento.salvar(caminhoArquivo, validado.conteudo());
+        MaterialModel salvo;
+        try { salvo = materialRepository.save(material); }
+        catch (RuntimeException ex) { armazenamento.remover(caminhoArquivo); throw ex; }
         eventos.publishEvent(new ModeracaoEmailService.MaterialPendente(salvo.getId(), salvo.getTitulo(),
                 disciplina.getNome(), salvo.getAutor().getNome(), salvo.getPublicadoEm()));
         return salvo;
@@ -166,6 +173,7 @@ public class MaterialService {
                 .orElseThrow(() -> new ResourceNotFoundException("Material não encontrado."));
         if (material.getStatusModeracao() != StatusModeracao.PENDENTE)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Este material já foi analisado. Atualize a fila.");
+        if (aprovar) antimalware.verificar(armazenamento.permitido(material.getCaminhoArquivo()));
         material.setStatusModeracao(aprovar ? StatusModeracao.APROVADO : StatusModeracao.REJEITADO);
         material.setDecisaoEm(Instant.now());
         material.setModerador(usuarios.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName())
@@ -176,12 +184,18 @@ public class MaterialService {
 
     public Resource arquivo(UUID id) {
         var material = buscarPorId(id);
-        Path raiz = uploadPath.toAbsolutePath().normalize();
-        Path caminho = Paths.get(material.getCaminhoArquivo()).toAbsolutePath().normalize();
-        if (!caminho.startsWith(raiz) || !Files.isRegularFile(caminho)) {
+        Path caminho = armazenamento.permitido(material.getCaminhoArquivo());
+        if (!Files.isRegularFile(caminho, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
             throw new ResourceNotFoundException("Arquivo não encontrado.");
         }
-        return new FileSystemResource(caminho);
+        return new FileSystemResource(caminho) {
+            @Override public java.io.InputStream getInputStream() throws java.io.IOException {
+                return Files.newInputStream(caminho, java.nio.file.LinkOption.NOFOLLOW_LINKS);
+            }
+            @Override public java.nio.channels.ReadableByteChannel readableChannel() throws java.io.IOException {
+                return Files.newByteChannel(caminho, java.nio.file.StandardOpenOption.READ, java.nio.file.LinkOption.NOFOLLOW_LINKS);
+            }
+        };
     }
 
 
@@ -206,6 +220,8 @@ public class MaterialService {
     private void validarPublicacao(MaterialRequestDTO dto) {
         if (dto.getTipoPublicacao() == null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Selecione o tipo de publicação.");
+        if (!dto.isReferenciaObrigatoriaPreenchida())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe a referência bibliográfica do artigo.");
         if (!dto.isReferenciaCompativel())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A referência bibliográfica só é permitida para Livro ou Artigo.");
         if (dto.getReferenciaBibliografica() != null && dto.getReferenciaBibliografica().length() > 500)

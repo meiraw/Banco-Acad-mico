@@ -22,8 +22,12 @@ public class FotoPerfilService {
     private static final long LIMITE = 2 * 1024 * 1024;
     private final UsuarioRepository usuarios;
     private final JdbcTemplate jdbc;
+    private final LimiteUploadService limites;
+    private final AntimalwareService antimalware;
 
-    public FotoPerfilService(UsuarioRepository usuarios, JdbcTemplate jdbc) {
+    public FotoPerfilService(UsuarioRepository usuarios, JdbcTemplate jdbc, LimiteUploadService limites, AntimalwareService antimalware) {
+        this.antimalware = antimalware;
+        this.limites = limites;
         this.usuarios = usuarios;
         this.jdbc = jdbc;
     }
@@ -47,13 +51,16 @@ public class FotoPerfilService {
 
     @Transactional
     public void salvar(String email, MultipartFile arquivo) {
-        byte[] foto = validarImagem(arquivo);
-        // Bloqueio serializa trocas simultâneas da mesma conta.
-        UsuarioModel conta = usuarioAtual(email);
-        usuarios.bloquearPorId(conta.getId()).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Conta não encontrada."));
-        int atualizados = jdbc.update("UPDATE fotos_perfil SET conteudo = ? WHERE usuario_id = ?", foto, conta.getId());
-        if (atualizados == 0) jdbc.update("INSERT INTO fotos_perfil(usuario_id, conteudo) VALUES (?, ?)", conta.getId(), foto);
+        try (var permissao = limites.adquirir(email, arquivo.getSize())) {
+            byte[] foto = validarImagem(arquivo);
+            antimalware.verificar(foto);
+            // Bloqueio serializa trocas simultâneas da mesma conta.
+            UsuarioModel conta = usuarioAtual(email);
+            usuarios.bloquearPorId(conta.getId()).orElseThrow(() ->
+                    new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Conta não encontrada."));
+            int atualizados = jdbc.update("UPDATE fotos_perfil SET conteudo = ? WHERE usuario_id = ?", foto, conta.getId());
+            if (atualizados == 0) jdbc.update("INSERT INTO fotos_perfil(usuario_id, conteudo) VALUES (?, ?)", conta.getId(), foto);
+        }
     }
 
     private byte[] validarImagem(MultipartFile arquivo) {

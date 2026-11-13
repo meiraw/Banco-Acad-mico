@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { GraduationCap, ArrowRight, ArrowLeft, ShieldCheck, LinkIcon } from 'lucide-react'
+import { ArrowRight, ArrowLeft, ShieldCheck, LinkIcon } from 'lucide-react'
+import { Logo } from '../components/Logo.jsx'
 import { CampoSenha } from '../components/CampoSenha.jsx'
 import { ThemeToggle } from '../components/ThemeToggle.jsx'
 import { avaliarSenha } from '../lib/academico.js'
 import { useSessao } from '../lib/sessao.jsx'
 import { lerAutorizacao, guardarAutorizacao } from '../lib/recuperacao.js'
 import { api } from '../lib/api.js'
+import { BotaoVoltar } from '../components/BotaoVoltar.jsx'
 
 export function RedefinirSenha() {
   const navigate = useNavigate()
@@ -51,11 +53,11 @@ export function RedefinirSenha() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
+        <BotaoVoltar destino="/auth" className="mb-4" />
         <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <Link to="/" className="inline-flex items-center gap-2 text-primary">
-              <GraduationCap className="size-7" />
-              <span className="text-2xl font-bold tracking-tight">Banco Acadêmico</span>
+          <div className="min-w-0">
+            <Link to="/" className="inline-block max-w-full">
+              <Logo className="w-48 sm:w-56" />
             </Link>
             <p className="label-mono mt-2 text-muted-foreground">Apoio institucional para acadêmicos da UNEMAT</p>
           </div>

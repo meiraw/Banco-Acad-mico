@@ -23,19 +23,18 @@ public class LimpezaArquivoService {
     private final JdbcTemplate jdbc;
     private final ApplicationEventPublisher eventos;
     private final TransactionTemplate transacao;
+    private final ArmazenamentoService armazenamento;
 
-    public LimpezaArquivoService(JdbcTemplate jdbc, ApplicationEventPublisher eventos, PlatformTransactionManager manager) {
+    public LimpezaArquivoService(JdbcTemplate jdbc, ApplicationEventPublisher eventos, PlatformTransactionManager manager,
+            ArmazenamentoService armazenamento) {
+        this.armazenamento = armazenamento;
         this.jdbc = jdbc; this.eventos = eventos;
         this.transacao = new TransactionTemplate(manager);
         this.transacao.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
-    public static Path caminhoPermitido(String caminho) {
-        Path raiz = Path.of("Uploads").toAbsolutePath().normalize();
-        Path arquivo = Path.of(caminho).toAbsolutePath().normalize();
-        if (!raiz.equals(arquivo.getParent()))
-            throw new ResourceNotFoundException("Caminho de arquivo inválido para exclusão.");
-        return arquivo;
+    public Path caminhoPermitido(String caminho) {
+        return armazenamento.permitido(caminho);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)

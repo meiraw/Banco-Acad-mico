@@ -14,6 +14,14 @@ import { Termos } from './pages/Termos.jsx'
 import { Publicacao } from './pages/Publicacao.jsx'
 import { Configuracoes } from './pages/Configuracoes.jsx'
 import { TemaProvider } from './lib/useTema.js'
+import { Forum } from './pages/Forum.jsx'
+import { NovaDiscussao } from './pages/NovaDiscussao.jsx'
+import { Discussao } from './pages/Discussao.jsx'
+import { EditarPerfil } from './pages/EditarPerfil.jsx'
+import { AlterarSenha } from './pages/AlterarSenha.jsx'
+import { Privacidade } from './pages/Privacidade.jsx'
+import { Ajuda } from './pages/Ajuda.jsx'
+import { PublicacoesDoUsuario } from './pages/PublicacoesDoUsuario.jsx'
 
 export default function App() {
   return <SessaoProvider><InterfaceConta /></SessaoProvider>
@@ -32,12 +40,20 @@ function InterfaceConta() {
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/termos" element={<Termos />} />
+          <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/ajuda" element={<Ajuda />} />
           <Route path="/painel" element={<RequireAuth><Painel /></RequireAuth>} />
+          <Route path="/forum" element={<RequireAuth><Forum /></RequireAuth>} />
+          <Route path="/forum/nova" element={<RequireAuth><NovaDiscussao /></RequireAuth>} />
+          <Route path="/forum/:id" element={<RequireAuth><Discussao /></RequireAuth>} />
           <Route path="/material/:id" element={<RequireAuth><Publicacao /></RequireAuth>} />
           <Route path="/compartilhar" element={<RequireAuth><Compartilhar /></RequireAuth>} />
           <Route path="/favoritos" element={<RequireAuth><Favoritos /></RequireAuth>} />
-          <Route path="/perfil" element={<RequireAuth><Perfil /></RequireAuth>} />
+          <Route path="/perfil" element={<RequireAuth>{perfil?.perfil === 'ADMIN' ? <Perfil /> : <Navigate to="/configuracoes/perfil" replace />}</RequireAuth>} />
+          <Route path="/minhas-publicacoes" element={<RequireAuth>{perfil?.perfil === 'ADMIN' ? <Navigate to="/perfil" replace /> : <PublicacoesDoUsuario />}</RequireAuth>} />
           <Route path="/configuracoes" element={<RequireAuth><Configuracoes /></RequireAuth>} />
+          <Route path="/configuracoes/perfil" element={<RequireAuth><EditarPerfil /></RequireAuth>} />
+          <Route path="/configuracoes/senha" element={<RequireAuth><AlterarSenha /></RequireAuth>} />
           <Route path="/admin" element={<RequireAuth admin><Navigate to="/perfil#administracao" replace /></RequireAuth>} />
           <Route path="*" element={<Home />} />
         </Routes>

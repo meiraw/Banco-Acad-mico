@@ -10,6 +10,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import java.net.URI;
 import java.security.SecureRandom;
@@ -25,10 +28,11 @@ public class ConfirmacaoEmailService {
     private final JavaMailSender mail;
     private final String remetente, url;
     private final SecureRandom random = new SecureRandom();
+    private final TransactionTemplate envio;
 
     public ConfirmacaoEmailService(UsuarioRepository usuarios, JdbcTemplate jdbc, JavaMailSender mail,
             @Value("${app.recuperacao.remetente}") String remetente,
-            @Value("${app.confirmacao.url}") String url) {
+            @Value("${app.confirmacao.url}") String url, PlatformTransactionManager transactions) {
         this.usuarios = usuarios; this.jdbc = jdbc; this.mail = mail;
         this.remetente = remetente;
         URI uri = URI.create(url);
@@ -36,6 +40,8 @@ public class ConfirmacaoEmailService {
                 || uri.getHost() == null || uri.getRawFragment() != null || uri.getRawQuery() != null)
             throw new IllegalArgumentException("URL de confirmação inválida");
         this.url = url;
+        this.envio = new TransactionTemplate(transactions);
+        this.envio.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Transactional
@@ -43,8 +49,15 @@ public class ConfirmacaoEmailService {
         jdbc.update("DELETE FROM recuperacoes_senha WHERE usuario_id = ?", usuarioId);
     }
 
-    @Transactional
     public void solicitar(String endereco) {
+        try {
+            envio.executeWithoutResult(status -> solicitarNaTransacao(endereco));
+        } catch (MailException ex) {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha SMTP na confirmação: categoria={}. Estado anterior preservado.", DiagnosticoEmail.categoria(ex));
+        }
+    }
+
+    private void solicitarNaTransacao(String endereco) {
         usuarios.findByEmail(endereco).ifPresent(conta -> {
             UsuarioModel usuario = usuarios.bloquearPorId(conta.getId()).orElseThrow();
             if (usuario.isEmailConfirmado()) return;
@@ -60,11 +73,7 @@ public class ConfirmacaoEmailService {
             mensagem.setSubject("Banco Acadêmico — confirme seu e-mail");
             mensagem.setText("Confirme seu e-mail em até 15 minutos. O link só pode ser usado uma vez. "
                     + "Se não criou uma conta, ignore esta mensagem.\n\n" + url + "#token=" + token);
-            try { mail.send(mensagem); }
-            catch (MailException ex) {
-                jdbc.update("DELETE FROM confirmacoes_email WHERE usuario_id = ?", usuario.getId());
-                org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha no envio de confirmação pelo SMTP.");
-            }
+            mail.send(mensagem);
         });
     }
 

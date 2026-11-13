@@ -7,6 +7,8 @@ import java.util.UUID;
 import java.time.Instant;
 
 public class MaterialResponseDTO {
+    private final boolean arquivoValidado;
+    public boolean isArquivoValidado() { return arquivoValidado; }
     private br.wm.banco.academico.Enum.TipoPublicacao tipoPublicacao;
     private String referenciaBibliografica;
     public br.wm.banco.academico.Enum.TipoPublicacao getTipoPublicacao() { return tipoPublicacao; }
@@ -36,6 +38,7 @@ public class MaterialResponseDTO {
     private UUID disciplinaId;
 
     public MaterialResponseDTO(MaterialModel model){
+        this.arquivoValidado = br.wm.banco.academico.Service.ArmazenamentoService.validado(model.getCaminhoArquivo());
         this.tipoPublicacao = model.getTipoPublicacao();
         this.referenciaBibliografica = model.getReferenciaBibliografica();
         this.statusModeracao = model.getStatusModeracao();

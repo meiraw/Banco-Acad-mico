@@ -1,6 +1,6 @@
-import { createContext, createElement, useCallback, useContext, useLayoutEffect, useSyncExternalStore } from 'react'
+import { createContext, createElement, useCallback, useContext, useLayoutEffect, useMemo, useSyncExternalStore } from 'react'
 import { useSessao } from './sessao.jsx'
-import { alternarTema, chaveTema, lerTema } from './tema.js'
+import { alternarTema, chaveTema, lerTema, definirTema, resolverTema, assinarTemaSistema } from './tema.js'
 
 const TemaContexto = createContext(null)
 
@@ -20,13 +20,21 @@ export function TemaProvider({ children }) {
       window.removeEventListener('storage', atualizar)
     }
   }, [conta])
-  const tema = useSyncExternalStore(assinar, ler)
+  const preferencia = useSyncExternalStore(assinar, ler, () => 'claro')
+  const media = useMemo(() => window.matchMedia?.('(prefers-color-scheme: dark)'), [])
+  const assinarSistema = useCallback(notificar => preferencia === 'automatico' ? assinarTemaSistema(media, notificar) : () => {}, [media, preferencia])
+  const lerSistema = useCallback(() => media?.matches ?? false, [media])
+  const prefereEscuro = useSyncExternalStore(assinarSistema, lerSistema, () => false)
+  const tema = resolverTema(preferencia, prefereEscuro)
 
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', tema === 'escuro')
   }, [tema])
 
-  return createElement(TemaContexto.Provider, { value: { tema, alternar: () => alternarTema(conta), disponivel: !!conta } }, children)
+  return createElement(TemaContexto.Provider, { value: {
+    tema, preferencia, selecionar: valor => definirTema(conta, valor),
+    alternar: () => alternarTema(conta, tema), disponivel: !!conta,
+  } }, children)
 }
 
 export function useTema() {

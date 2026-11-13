@@ -13,12 +13,20 @@ import java.util.UUID;
 @Getter
 public class MaterialRequestDTO {
     @Setter
+    private Boolean responsabilidadeConfirmada;
+    @Setter
     @NotNull(message = "Selecione o tipo de publicação.")
     private br.wm.banco.academico.Enum.TipoPublicacao tipoPublicacao;
 
     @Setter
     @Size(max = 500, message = "A referência bibliográfica deve ter até 500 caracteres.")
     private String referenciaBibliografica;
+
+    @jakarta.validation.constraints.AssertTrue(message = "Informe a referência bibliográfica do artigo.")
+    public boolean isReferenciaObrigatoriaPreenchida() {
+        return tipoPublicacao != br.wm.banco.academico.Enum.TipoPublicacao.ARTIGO
+                || (referenciaBibliografica != null && !referenciaBibliografica.isBlank());
+    }
 
     @jakarta.validation.constraints.AssertTrue(message = "A referência bibliográfica só é permitida para Livro ou Artigo.")
     public boolean isReferenciaCompativel() {

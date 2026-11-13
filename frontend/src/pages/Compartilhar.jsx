@@ -4,8 +4,10 @@ import { UploadCloud, ShieldAlert } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
 import { api, rotuloSemestre } from '../lib/api.js'
 import { TIPOS_PUBLICACAO, dadosPublicacao, permiteReferencia, rotuloTipoPublicacao } from '../lib/tipoPublicacao.js'
+import { useSessao } from '../lib/sessao.jsx'
 
 export function Compartilhar() {
+  const { perfil } = useSessao()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const [cursoId, setCursoId] = useState(params.get('curso') || '')
@@ -42,14 +44,16 @@ export function Compartilhar() {
     if (descricao.trim().length < 2) { setErro('Informe uma descrição com pelo menos 2 caracteres.'); return }
     if (!disciplinasVisiveis.some(d => d.id === disciplinaId)) { setErro('Selecione a disciplina.'); return }
     if (!arquivo) { setErro('Selecione o arquivo do material.'); return }
+    if (!arquivo.size) { setErro('Selecione um arquivo não vazio.'); return }
+    if (!/\.(pdf|doc|docx|ppt|pptx|jpe?g|png|gif)$/i.test(arquivo.name)) { setErro('Use PDF, DOC, DOCX, PPT, PPTX, JPG, PNG ou GIF.'); return }
     if (arquivo.size > 20 * 1024 * 1024) { setErro('O arquivo deve ter até 20 MB.'); return }
     if (!TIPOS_PUBLICACAO.some(([valor]) => valor === tipoPublicacao)) { setErro('Selecione o tipo de publicação.'); return }
     if (!autoral) { setErro('Confirme que você é responsável pelo conteúdo enviado.'); return }
 
     setEnviando(true)
     try {
-      const material = await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId, ...dadosPublicacao(tipoPublicacao, referencia) }, arquivo)
-      navigate('/perfil', { replace: true, state: { materialEnviado: material.id } })
+      const material = await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId, responsabilidadeConfirmada: autoral, ...dadosPublicacao(tipoPublicacao, referencia) }, arquivo)
+      navigate(perfil?.perfil === 'ADMIN' ? '/perfil' : '/minhas-publicacoes', { replace: true, state: { materialEnviado: material.id } })
     } catch (err) { setErro(err.message); setEnviando(false) }
   }
 
@@ -108,10 +112,10 @@ export function Compartilhar() {
 
           {permiteReferencia(tipoPublicacao) && <div className="space-y-1.5">
             <label htmlFor="referencia" className="label-mono block">Referência Bibliográfica do {rotuloTipoPublicacao(tipoPublicacao)}</label>
-            <textarea id="referencia" value={referencia} onChange={e => setReferencia(e.target.value)} maxLength={500} rows={2}
+            <textarea id="referencia" value={referencia} onChange={e => setReferencia(e.target.value)} maxLength={500} rows={2} required={tipoPublicacao === 'ARTIGO'}
               aria-describedby="orientacao-referencia" placeholder="Autor, título, edição, local, editora e ano."
               className="input-base h-auto py-2" />
-            <p id="orientacao-referencia" className="text-sm text-muted-foreground">Informe a referência bibliográfica do {tipoPublicacao === 'ARTIGO' ? 'artigo' : 'livro'} utilizado, quando aplicável.</p>
+            <p id="orientacao-referencia" className="text-sm text-muted-foreground">{tipoPublicacao === 'ARTIGO' ? 'Obrigatória: informe a referência bibliográfica do artigo.' : 'Opcional: informe a referência bibliográfica do livro, quando aplicável.'}</p>
           </div>}
 
           <div className="space-y-1.5">
@@ -120,7 +124,8 @@ export function Compartilhar() {
               <UploadCloud className="size-8 text-primary" />
               <span className="label-mono text-muted-foreground">{arquivo ? arquivo.name : 'Clique para selecionar o arquivo'}</span>
             </label>
-            <input id="arquivo" type="file" className="sr-only" accept=".pdf,.ppt,.pptx,.doc,.docx,image/*" onChange={e => setArquivo(e.target.files?.[0] ?? null)} />
+            <input id="arquivo" type="file" className="sr-only" accept=".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png,.gif" onChange={e => setArquivo(e.target.files?.[0] ?? null)} />
+            <p className="text-sm text-muted-foreground">PDF, DOC, DOCX, PPT, PPTX, JPG, PNG ou GIF. Sem senha, macros ou objetos incorporados.</p>
           </div>
 
           <div className="space-y-3 rounded-lg border-2 border-tertiary/50 bg-tertiary/10 p-4">

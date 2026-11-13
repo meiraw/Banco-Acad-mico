@@ -5,6 +5,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
@@ -20,17 +23,26 @@ public class RecuperacaoSenhaService {
  private final PasswordEncoder encoder;
  private final RecuperacaoEmailService email;
  private final SecureRandom random = new SecureRandom();
+ private final TransactionTemplate envio;
  public RecuperacaoSenhaService(UsuarioRepository usuarios, JdbcTemplate jdbc,
-    PasswordEncoder encoder, RecuperacaoEmailService email) {
+    PasswordEncoder encoder, RecuperacaoEmailService email, PlatformTransactionManager transactions) {
   this.usuarios = usuarios; this.jdbc = jdbc; this.encoder = encoder; this.email = email;
+  this.envio = new TransactionTemplate(transactions);
+  this.envio.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
  }
  public static String hash(String valor) {
   try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
       .digest(valor.getBytes(StandardCharsets.UTF_8))); }
   catch (NoSuchAlgorithmException ex) { throw new IllegalStateException("SHA-256 indisponível"); }
  }
- @Transactional
  public void solicitar(String endereco) {
+  try {
+   envio.executeWithoutResult(status -> solicitarNaTransacao(endereco));
+  } catch (MailException ex) {
+   org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha SMTP na recuperação: categoria={}. Estado anterior preservado.", DiagnosticoEmail.categoria(ex));
+  }
+ }
+ private void solicitarNaTransacao(String endereco) {
   var conta = usuarios.findByEmail(endereco);
   if (conta.isEmpty()) return;
   UsuarioModel usuario = usuarios.bloquearPorId(conta.get().getId()).orElseThrow();
@@ -39,11 +51,7 @@ public class RecuperacaoSenhaService {
       usuario.getId(), Timestamp.from(Instant.now()));
   jdbc.update("INSERT INTO recuperacoes_senha(token_hash, usuario_id, expira_em) VALUES (?, ?, ?)",
       hash("codigo:" + usuario.getEmail() + ":" + token), usuario.getId(), Timestamp.from(Instant.now().plusSeconds(900)));
-  try { email.enviar(usuario.getEmail(), token); }
-  catch (MailException ex) {
-   jdbc.update("DELETE FROM recuperacoes_senha WHERE usuario_id = ?", usuario.getId());
-   org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha no envio de recuperação de senha pelo SMTP.");
-  }
+  email.enviar(usuario.getEmail(), token);
  }
  @Transactional
  public String validarCodigo(String endereco, String codigo) {

@@ -96,8 +96,6 @@ export function Painel() {
             <input
               value={termo}
               onChange={e => setTermo(e.target.value)}
-              onFocus={() => setFiltrosAbertos(true)}
-              onClick={() => setFiltrosAbertos(true)}
               placeholder="Buscar por título ou disciplina"
               aria-label="Pesquisar materiais"
               aria-expanded={filtrosAbertos}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api.js'
+import { BotaoVoltar } from '../components/BotaoVoltar.jsx'
 
 export function ConfirmarEmail() {
   const [token, setToken] = useState(() => {
@@ -35,6 +36,7 @@ export function ConfirmarEmail() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="card-surface w-full max-w-md space-y-4 p-6">
+        <BotaoVoltar destino="/auth" />
         <h1 className="text-xl font-semibold">{concluido ? 'E-mail confirmado' : 'Confirme seu e-mail'}</h1>
         <p className="text-sm text-muted-foreground">
           {concluido ? 'Sua conta está pronta. Entre com a senha que criou no Banco Acadêmico.'

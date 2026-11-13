@@ -80,7 +80,7 @@ class ModeracaoTests {
         return enviar("RESUMO", null);
     }
     MockMultipartFile dadosPublicacao(String tipo, String referencia) {
-        String extras = (tipo == null ? "" : ",\"tipoPublicacao\":\"" + tipo + "\"")
+        String extras = ",\"responsabilidadeConfirmada\":true" + (tipo == null ? "" : ",\"tipoPublicacao\":\"" + tipo + "\"")
                 + (referencia == null ? "" : ",\"referenciaBibliografica\":\"" + referencia + "\"");
         return new MockMultipartFile("dados", "", "application/json",
             ("{\"titulo\":\"Resumo de teste\",\"descricao\":\"Descrição do material\",\"disciplinaId\":\"" + disciplina + "\"" + extras + "}").getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -88,7 +88,7 @@ class ModeracaoTests {
     UUID enviar(String tipo, String referencia) throws Exception {
         var dados = dadosPublicacao(tipo, referencia);
         mvc.perform(multipart("/material").file(dados)
-                .file(new MockMultipartFile("arquivo", "resumo.pdf", "application/pdf", "%PDF-teste".getBytes()))
+                .file(new MockMultipartFile("arquivo", "resumo.pdf", "application/pdf", UploadFixtures.pdf()))
                 .header("Authorization", bearer(autor)))
             .andExpect(status().isCreated()).andExpect(jsonPath("statusModeracao").value("PENDENTE"));
         var m = materiais.findByAutorEmailOrderByPublicadoEmDescIdDesc(autor.getEmail(), org.springframework.data.domain.PageRequest.of(0, 12)).getContent().getFirst();
@@ -112,7 +112,7 @@ class ModeracaoTests {
             mvc.perform(get(path).header("Authorization", bearer(colega))).andExpect(status().isNotFound());
         }
         mvc.perform(get("/material/" + id + "/arquivo").header("Authorization", bearer(autor)))
-            .andExpect(status().isOk()).andExpect(content().bytes("%PDF-teste".getBytes()))
+            .andExpect(status().isOk()).andExpect(content().bytes(UploadFixtures.pdf()))
             .andExpect(header().string("Cache-Control", "private, no-store"));
         mvc.perform(get("/material/" + id + "/arquivo").header("Authorization", bearer(admin))).andExpect(status().isOk());
         mvc.perform(get("/perfil/publicacoes").header("Authorization", bearer(autor)))
@@ -171,8 +171,10 @@ class ModeracaoTests {
         assertEquals(StatusModeracao.PENDENTE, materiais.findById(id).orElseThrow().getStatusModeracao());
     }
 
-    @Test void falhaSmtpNaoReverteMaterialNemRepeteEnvioEmConsultas() throws Exception {
-        doThrow(new MailSendException("falha de teste")).when(mail).send(any(SimpleMailMessage.class));
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"autenticacao", "timeout", "conexao", "preparacao", "rejeicao"})
+    void falhaSmtpNaoReverteMaterialNemRepeteEnvioEmConsultas(String falha) throws Exception {
+        doThrow(EmailFalhasTests.falha(falha)).when(mail).send(any(SimpleMailMessage.class));
         UUID id = enviar();
         assertTrue(materiais.existsById(id));
         mvc.perform(get("/material/" + id).header("Authorization", bearer(autor))).andExpect(status().isOk());
@@ -183,8 +185,8 @@ class ModeracaoTests {
         var caminho = new java.util.concurrent.atomic.AtomicReference<Path>();
         var id = new java.util.concurrent.atomic.AtomicReference<UUID>();
         assertThrows(IllegalStateException.class, () -> new TransactionTemplate(transactions).execute(status -> {
-            var m = service.criar(new MaterialRequestDTO("Rollback", "Descrição", disciplina, br.wm.banco.academico.Enum.TipoPublicacao.RESUMO, null),
-                new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", "%PDF".getBytes()), autor.getEmail());
+            var m = service.criar(UploadFixtures.dados("Rollback", "Descrição", disciplina, br.wm.banco.academico.Enum.TipoPublicacao.RESUMO, null),
+                new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", UploadFixtures.pdf()), autor.getEmail());
             caminho.set(Path.of(m.getCaminhoArquivo())); id.set(m.getId());
             verifyNoInteractions(mail);
             throw new IllegalStateException("Reverter teste");
@@ -230,17 +232,17 @@ class ModeracaoTests {
     @Test void validaTipoObrigatorioEReferenciaSomenteParaLivroAntesDoUpload() throws Exception {
         long antes = materiais.count();
         for (String tipo : new String[]{null, "INVALIDO"}) mvc.perform(multipart("/material")
-            .file(dadosPublicacao(tipo, null)).file(new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", "%PDF".getBytes()))
+            .file(dadosPublicacao(tipo, null)).file(new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", UploadFixtures.pdf()))
             .header("Authorization", bearer(autor))).andExpect(status().isBadRequest());
         for (var tipo : br.wm.banco.academico.Enum.TipoPublicacao.values()) {
             if (tipo == br.wm.banco.academico.Enum.TipoPublicacao.LIVRO
                     || tipo == br.wm.banco.academico.Enum.TipoPublicacao.ARTIGO) continue;
             mvc.perform(multipart("/material").file(dadosPublicacao(tipo.name(), "Referência indevida"))
-                .file(new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", "%PDF".getBytes()))
+                .file(new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", UploadFixtures.pdf()))
                 .header("Authorization", bearer(autor))).andExpect(status().isBadRequest());
         }
         mvc.perform(multipart("/material").file(dadosPublicacao("LIVRO", "x".repeat(501)))
-            .file(new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", "%PDF".getBytes()))
+            .file(new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", UploadFixtures.pdf()))
             .header("Authorization", bearer(autor))).andExpect(status().isBadRequest());
         assertEquals(antes, materiais.count()); verifyNoInteractions(mail);
     }
@@ -253,6 +255,22 @@ class ModeracaoTests {
         mvc.perform(get("/material/" + id + "/arquivo")).andExpect(status().isOk());
     }
 
+    @Test void rejeitaArquivoDisfarcadoESemResponsabilidadeSemCriarPublicacao() throws Exception {
+        long antes = materiais.count();
+        mvc.perform(multipart("/material").file(dadosPublicacao("RESUMO", null))
+            .file(new MockMultipartFile("arquivo", "falso.pdf", "application/pdf", "<html>inválido</html>".getBytes()))
+            .header("Authorization", bearer(autor))).andExpect(status().isBadRequest());
+        var semConfirmacao = new MockMultipartFile("dados", "", "application/json",
+            ("{\"titulo\":\"Resumo\",\"descricao\":\"Descrição\",\"disciplinaId\":\"" + disciplina + "\",\"tipoPublicacao\":\"RESUMO\"}").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        mvc.perform(multipart("/material").file(semConfirmacao)
+            .file(new MockMultipartFile("arquivo", "a.pdf", "application/pdf", UploadFixtures.pdf()))
+            .header("Authorization", bearer(autor))).andExpect(status().isBadRequest());
+        mvc.perform(multipart("/material").file(dadosPublicacao("RESUMO", null))
+            .header("Authorization", bearer(autor))).andExpect(status().isBadRequest())
+            .andExpect(jsonPath("mensagem").exists());
+        assertEquals(antes, materiais.count()); verifyNoInteractions(mail);
+    }
+
     @Test void atualizacaoValidaReferenciaELimpaReferenciaAoTrocarTipoSemAlterarModeracao() throws Exception {
         UUID id = enviar("LIVRO", "Referência do livro");
         String base = "{\"titulo\":\"Resumo atualizado\",\"descricao\":\"Descrição atualizada\",\"disciplinaId\":\"" + disciplina + "\",\"tipoPublicacao\":\"SLIDE\"";
@@ -262,6 +280,52 @@ class ModeracaoTests {
             .content(base + "}")).andExpect(status().isOk()).andExpect(jsonPath("tipoPublicacao").value("SLIDE"))
             .andExpect(jsonPath("referenciaBibliografica").isEmpty()).andExpect(jsonPath("statusModeracao").value("PENDENTE"));
         assertNull(materiais.findById(id).orElseThrow().getReferenciaBibliografica());
+    }
+
+    @Test void artigoExigeReferenciaNaCriacaoSemPersistirTentativasInvalidas() throws Exception {
+        long antes = materiais.count();
+        for (String referencia : new String[]{null, "", "   "}) {
+            mvc.perform(multipart("/material").file(dadosPublicacao("ARTIGO", referencia))
+                .file(new MockMultipartFile("arquivo", "artigo.pdf", "application/pdf", UploadFixtures.pdf()))
+                .header("Authorization", bearer(autor))).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("mensagem").value("Informe a referência bibliográfica do artigo."));
+        }
+        assertEquals(antes, materiais.count()); verifyNoInteractions(mail);
+        UUID id = enviar("ARTIGO", " Autor. Artigo. 2026. ");
+        assertEquals("Autor. Artigo. 2026.", materiais.findById(id).orElseThrow().getReferenciaBibliografica());
+    }
+
+    @Test void atualizacaoExigeReferenciaParaArtigoEMantemLivroOpcional() throws Exception {
+        UUID id = enviar("LIVRO", null);
+        String base = "{\"titulo\":\"Título atualizado\",\"descricao\":\"Descrição atualizada\",\"disciplinaId\":\"" + disciplina + "\",\"tipoPublicacao\":\"ARTIGO\"";
+        for (String extra : new String[]{"", ",\"referenciaBibliografica\":null", ",\"referenciaBibliografica\":\"\"", ",\"referenciaBibliografica\":\"   \""}) {
+            mvc.perform(put("/material/" + id).header("Authorization", bearer(admin))
+                .contentType("application/json").content(base + extra + "}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("mensagem").value("Informe a referência bibliográfica do artigo."));
+        }
+        assertEquals(br.wm.banco.academico.Enum.TipoPublicacao.LIVRO, materiais.findById(id).orElseThrow().getTipoPublicacao());
+        mvc.perform(put("/material/" + id).header("Authorization", bearer(admin)).contentType("application/json")
+            .content(base + ",\"referenciaBibliografica\":\" Autor. Artigo. 2026. \"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("referenciaBibliografica").value("Autor. Artigo. 2026."))
+            .andExpect(jsonPath("statusModeracao").value("PENDENTE"));
+        mvc.perform(put("/material/" + id).header("Authorization", bearer(admin)).contentType("application/json")
+            .content(base.replace("ARTIGO", "LIVRO") + "}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("referenciaBibliografica").isEmpty());
+    }
+
+    @Test void artigoLegadoSemReferenciaContinuaLegivelESoExigeCorrecaoAoAtualizar() throws Exception {
+        UUID id = enviar("ARTIGO", "Autor. Artigo. 2026.");
+        jdbc.update("UPDATE materiais SET referencia_bibliografica = NULL, status_moderacao = 'APROVADO' WHERE id = ?", id);
+        mvc.perform(get("/material/" + id)).andExpect(status().isOk())
+            .andExpect(jsonPath("tipoPublicacao").value("ARTIGO")).andExpect(jsonPath("referenciaBibliografica").isEmpty());
+        mvc.perform(get("/material/" + id + "/arquivo")).andExpect(status().isOk());
+        String base = "{\"titulo\":\"Artigo legado\",\"descricao\":\"Descrição atualizada\",\"disciplinaId\":\"" + disciplina + "\",\"tipoPublicacao\":\"ARTIGO\"";
+        mvc.perform(put("/material/" + id).header("Authorization", bearer(admin)).contentType("application/json").content(base + "}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(put("/material/" + id).header("Authorization", bearer(admin)).contentType("application/json")
+            .content(base + ",\"referenciaBibliografica\":\"Autor. Artigo. 2026.\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("statusModeracao").value("APROVADO"));
     }
 
     @Test void autorExcluiPostagemArquivoEInteracoesEmQualquerStatusMasColegaNao() throws Exception {

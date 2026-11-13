@@ -1,0 +1,15 @@
+export const opcoesPdf = (url, base = '/') => ({
+  url,
+  enableXfa: false,
+  cMapUrl: `${base}pdfjs/cmaps/`,
+  cMapPacked: true,
+  standardFontDataUrl: `${base}pdfjs/standard_fonts/`,
+  wasmUrl: `${base}pdfjs/wasm/`,
+  iccUrl: `${base}pdfjs/iccs/`,
+  disableWorkerRendering: true,
+  maxImageSize: 16_000_000,
+  canvasMaxAreaInBytes: 16_000_000,
+  disableAutoFetch: true,
+  disableStream: true,
+  stopAtErrors: true,
+})

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Download, Heart, MessageCircle } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import { Download, Heart, MessageCircle } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
 import { Avatar } from '../components/Avatar.jsx'
 import { api, categoria, tamanho, rotuloSemestre } from '../lib/api.js'
@@ -10,6 +10,7 @@ import { ComentarioPublicacao } from '../components/ComentarioPublicacao.jsx'
 import { StatusModeracao } from '../components/StatusModeracao.jsx'
 import { DadosPublicacao } from '../components/DadosPublicacao.jsx'
 import { useArquivoMaterial } from '../lib/useArquivoMaterial.js'
+import { PreviaPdf } from '../components/PreviaPdf.jsx'
 
 const data = valor => valor ? new Date(valor).toLocaleString('pt-BR') : ''
 
@@ -31,7 +32,12 @@ export function Publicacao() {
   const [mensagem, setMensagem] = useState('')
   const envio = useRef(false)
   const consulta = useRef(0)
-  const { isFavorito, alternar, disponivel } = useFavoritos()
+  const { isFavorito, alternar, disponivel, pendente, erro: erroEstadoFavoritos, recarregar } = useFavoritos()
+  const [erroFavorito, setErroFavorito] = useState('')
+  async function favoritar() {
+    setErroFavorito('')
+    try { await alternar(id) } catch (error) { setErroFavorito(error.message) }
+  }
 
   useEffect(() => {
     let ativo = true
@@ -85,10 +91,9 @@ export function Publicacao() {
   const curso = cursos.find(c => c.id === semestre?.cursoId)
   const { url, erro: erroArquivo } = useArquivoMaterial(material)
   const cat = material && categoria(material.tipoArquivo)
-  const imagemSegura = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(material?.tipoArquivo)
+  const imagemSegura = material?.arquivoValidado && ['image/jpeg', 'image/png', 'image/gif'].includes(material.tipoArquivo)
 
   return <AppShell cursos={cursos} semestres={semestres} rotuloSemestre={rotuloSemestre}>
-    <Link to="/painel" className="inline-flex items-center gap-2 text-sm text-secondary"><ArrowLeft className="size-4" /> Voltar aos materiais</Link>
     {carregando && <p role="status" className="mt-6 text-muted-foreground">Carregando publicação…</p>}
     {erro && <p role="alert" className="mt-6 text-destructive">{erro}</p>}
     {material && <div className="mx-auto mt-6 max-w-5xl space-y-6">
@@ -108,16 +113,17 @@ export function Publicacao() {
             </div>
             <div className="flex flex-wrap items-start gap-3">
             <CurtirMaterial key={id} materialId={id} />
-            <button type="button" disabled={!disponivel} aria-pressed={isFavorito(id)} onClick={() => alternar(id)} className={`btn btn-outline ${isFavorito(id) ? 'text-destructive' : ''}`}>
+            <button type="button" disabled={!disponivel || pendente(id) || material.statusModeracao !== 'APROVADO'} aria-busy={pendente(id)} aria-pressed={isFavorito(id)} onClick={favoritar} className={`btn btn-outline ${isFavorito(id) ? 'text-destructive' : ''}`}>
               <Heart className={`size-4 ${isFavorito(id) ? 'fill-current' : ''}`} /> {isFavorito(id) ? 'Remover dos favoritos' : 'Favoritar'}
             </button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Os favoritos ficam guardados apenas para sua conta neste navegador.</p>
+          <p className="text-xs text-muted-foreground">Os favoritos ficam salvos na sua conta e podem ser acessados em outros dispositivos.</p>
+          {(erroFavorito || erroEstadoFavoritos) && <p role="alert" className="text-sm text-destructive">{erroFavorito || erroEstadoFavoritos} <button type="button" className="underline" onClick={() => { setErroFavorito(''); void recarregar() }}>Tentar novamente</button></p>}
           <p className="whitespace-pre-wrap break-words text-muted-foreground">{material.descricao}</p>
         </header>
         <div className="border-y border-border bg-surface-container">
-          {erroArquivo ? <p role="alert" className="p-5 text-destructive">{erroArquivo}</p> : !url ? <p role="status" className="p-5">Carregando arquivo…</p> : cat === 'PDF' ? <iframe src={url} title={material.titulo} className="h-[70vh] min-h-80 w-full" />
+          {erroArquivo ? <p role="alert" className="p-5 text-destructive">{erroArquivo}</p> : !url ? <p role="status" className="p-5">Carregando arquivo…</p> : material.arquivoValidado && cat === 'PDF' ? <PreviaPdf url={url} titulo={material.titulo} />
             : imagemSegura ? <img src={url} alt={material.titulo} className="mx-auto max-h-[70vh] max-w-full object-contain" />
               : <p className="p-10 text-center text-muted-foreground">A prévia deste formato não está disponível. Baixe o arquivo para ver o conteúdo.</p>}
         </div>

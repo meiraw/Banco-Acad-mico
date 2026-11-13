@@ -55,7 +55,7 @@ public class ModeracaoEmailService {
             mail.send(mensagem);
         } catch (RuntimeException ex) {
             // Sem exceção SMTP, destinatário, credenciais ou conteúdo do material no log.
-            LoggerFactory.getLogger(getClass()).warn("Falha no envio da notificação de moderação do material {}. Material preservado.", evento.id());
+            LoggerFactory.getLogger(getClass()).warn("Falha no envio da notificação de moderação do material {}. Material preservado. categoria={}", evento.id(), DiagnosticoEmail.categoria(ex));
         }
     }
 }

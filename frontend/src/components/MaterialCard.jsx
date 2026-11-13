@@ -7,14 +7,20 @@ import { Link } from 'react-router-dom'
 import { Avatar } from './Avatar.jsx'
 import { StatusModeracao } from './StatusModeracao.jsx'
 import { rotuloTipoPublicacao } from '../lib/tipoPublicacao.js'
+import { useState } from 'react'
 
 const ICONES = { PDF: FileText, Slides: Presentation, Imagem: ImageIcon, Outro: FileQuestion }
 
 export function MaterialCard({ material, disciplina, semestreIndice, semestre, cursos = [], onExcluir }) {
   const cat = categoria(material.tipoArquivo)
   const Icone = ICONES[cat]
-  const { isFavorito, alternar, disponivel } = useFavoritos()
+  const { isFavorito, alternar, disponivel, pendente, erro, recarregar } = useFavoritos()
+  const [erroFavorito, setErroFavorito] = useState('')
   const favorito = isFavorito(material.id)
+  async function favoritar() {
+    setErroFavorito('')
+    try { await alternar(material.id) } catch (error) { setErroFavorito(error.message) }
+  }
 
   return (
     <article className="card-surface flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
@@ -31,11 +37,12 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
           ) : <span />}
           <button
             type="button"
-            onClick={() => alternar(material.id)}
-            disabled={!disponivel}
+            onClick={favoritar}
+            disabled={!disponivel || pendente(material.id) || material.statusModeracao !== 'APROVADO'}
             aria-pressed={favorito}
             aria-label={favorito ? 'Remover dos favoritos' : 'Favoritar material'}
-            title={favorito ? 'Remover dos favoritos' : 'Favoritar material'}
+            title={material.statusModeracao !== 'APROVADO' ? 'Somente materiais aprovados podem ser favoritados.' : favorito ? 'Remover dos favoritos' : 'Favoritar material'}
+            aria-busy={pendente(material.id)}
             className={`grid size-8 shrink-0 place-items-center rounded-full border transition-colors ${
               favorito ? 'border-destructive/40 bg-destructive/10 text-destructive' : 'border-border text-muted-foreground hover:border-destructive/40 hover:text-destructive'
             }`}
@@ -81,6 +88,7 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
             )}
           </div>
         </div>
+        {(erroFavorito || erro) && <p role="alert" className="text-sm text-destructive">{erroFavorito || erro} <button type="button" className="underline" onClick={() => { setErroFavorito(''); void recarregar() }}>Tentar novamente</button></p>}
       </div>
     </article>
   )

@@ -5,7 +5,8 @@ import { MaterialCard } from './MaterialCard.jsx'
 import { Modal } from './Modal.jsx'
 import { useFavoritos } from '../lib/useFavoritos.js'
 
-export function MinhasPublicacoes({ cursos, semestres }) {
+export function MinhasPublicacoes({ cursos, semestres, principal = false }) {
+  const Titulo = principal ? 'h1' : 'h2'
   const [pagina, setPagina] = useState(0)
   const [resultado, setResultado] = useState(null)
   const [disciplinas, setDisciplinas] = useState([])
@@ -17,19 +18,20 @@ export function MinhasPublicacoes({ cursos, semestres }) {
   const [erroExclusao, setErroExclusao] = useState('')
   const [mensagem, setMensagem] = useState('')
   const exclusao = useRef(false)
-  const { isFavorito, alternar } = useFavoritos()
+  const { invalidar } = useFavoritos()
 
   async function excluir() {
     if (exclusao.current || !removendo) return
     exclusao.current = true; setExcluindo(true); setErroExclusao('')
     try {
       await api.excluirMaterial(removendo.id)
-      // Uma falha no armazenamento local não desfaz a exclusão confirmada no servidor.
-      try { if (isFavorito(removendo.id)) alternar(removendo.id) } catch { /* favoritos locais indisponíveis */ }
+      // O banco remove a relação por cascata; atualiza somente o estado da interface.
+      invalidar(removendo.id)
       setRemovendo(null); setMensagem('Publicação excluída. O arquivo associado também será removido.')
       setTentativa(t => t + 1)
     } catch (e) {
       if (e.status === 404) {
+        invalidar(removendo.id)
         setRemovendo(null); setMensagem('Esta publicação já foi removida.'); setTentativa(t => t + 1)
       } else setErroExclusao(e.message)
     } finally { exclusao.current = false; setExcluindo(false) }
@@ -48,9 +50,9 @@ export function MinhasPublicacoes({ cursos, semestres }) {
     return () => { ativo = false }
   }, [pagina, tentativa])
 
-  return <section aria-labelledby="minhas-publicacoes" className="mt-8 space-y-4">
+  return <section aria-labelledby="minhas-publicacoes" className={principal ? 'space-y-4' : 'mt-8 space-y-4'}>
     <div>
-      <h2 id="minhas-publicacoes" className="text-2xl font-bold tracking-tight">Minhas publicações</h2>
+      <Titulo id="minhas-publicacoes" className={`${principal ? 'text-3xl' : 'text-2xl'} font-bold tracking-tight`}>Minhas publicações</Titulo>
       <p className="mt-1 text-sm text-muted-foreground">Os materiais que você compartilhou, com a disciplina e o semestre de cada publicação.</p>
     </div>
     {mensagem && <p role="status" className="text-sm text-secondary">{mensagem}</p>}

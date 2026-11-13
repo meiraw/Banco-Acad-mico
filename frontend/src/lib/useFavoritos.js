@@ -1,30 +1,39 @@
-import { useCallback, useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { useSessao } from './sessao.jsx'
-import { alternarFavorito, chaveFavoritos, idsFavoritos, lerFavoritos } from './favoritos.js'
+import { api } from './api.js'
+import { criarFavoritos } from './favoritos.js'
+
+let sessaoAtual = null
+let storeAtual = null
+const vazio = { ids: new Set(), pendentes: new Set(), pronto: false, carregando: true, erro: '', revisao: 0 }
+const semSessao = { snapshot: () => vazio, assinar: () => () => {}, carregar: async () => {}, alternar: async () => {}, invalidar: () => {} }
+
+function storeDaSessao(usuarioId, token) {
+  const chave = usuarioId && token ? `${usuarioId}:${token}` : null
+  if (chave !== sessaoAtual) {
+    storeAtual?.descartar()
+    sessaoAtual = chave
+    storeAtual = chave ? criarFavoritos({ api,
+      estaAtiva: () => sessionStorage.getItem('banco-academico:token') === token }) : null
+  }
+  return storeAtual || semSessao
+}
 
 export function useFavoritos() {
   const { perfil } = useSessao()
-  const usuarioId = perfil?.id
-  const assinar = useCallback(notificar => {
-    const chave = chaveFavoritos(usuarioId)
-    const atualizar = event => {
-      if (chave && (event.key === null || event.key === chave || event.detail?.chave === chave)) notificar()
-    }
-    window.addEventListener('favoritos-atualizados', atualizar)
-    window.addEventListener('storage', atualizar)
-    return () => {
-      window.removeEventListener('favoritos-atualizados', atualizar)
-      window.removeEventListener('storage', atualizar)
-    }
-  }, [usuarioId])
-  const ler = useCallback(() => lerFavoritos(usuarioId), [usuarioId])
-  const serializado = useSyncExternalStore(assinar, ler)
-  const ids = useMemo(() => idsFavoritos(serializado), [serializado])
-
+  const store = storeDaSessao(perfil?.id, perfil?.token)
+  const estado = useSyncExternalStore(store.assinar, store.snapshot, store.snapshot)
+  useEffect(() => { void store.carregar() }, [store])
   return {
-    isFavorito: id => ids.has(id),
-    alternar: id => alternarFavorito(usuarioId, id),
-    disponivel: !!usuarioId,
-    lista: ids,
+    isFavorito: id => estado.ids.has(id),
+    alternar: store.alternar,
+    disponivel: !!perfil?.id && estado.pronto,
+    lista: estado.ids,
+    carregando: estado.carregando,
+    pendente: id => estado.pendentes.has(id),
+    erro: estado.erro,
+    revisao: estado.revisao,
+    recarregar: store.carregar,
+    invalidar: store.invalidar,
   }
 }

@@ -30,7 +30,8 @@ class ConfirmacaoEmailTests {
         jdbc = new JdbcTemplate(new DriverManagerDataSource("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", ""));
         jdbc.execute("CREATE TABLE confirmacoes_email(token_hash CHAR(64) PRIMARY KEY, usuario_id UUID, expira_em TIMESTAMP WITH TIME ZONE)");
         usuarios = mock(UsuarioRepository.class); mail = mock(JavaMailSender.class);
-        service = new ConfirmacaoEmailService(usuarios, jdbc, mail, "envio@example.org", "https://example.org/confirmar-email");
+        service = new ConfirmacaoEmailService(usuarios, jdbc, mail, "envio@example.org", "https://example.org/confirmar-email",
+                new org.springframework.jdbc.datasource.DataSourceTransactionManager(jdbc.getDataSource()));
         usuario = new UsuarioModel(); usuario.setEmail("teste@example.org");
         ReflectionTestUtils.setField(usuario, "id", UUID.randomUUID());
         when(usuarios.findByEmail(usuario.getEmail())).thenReturn(Optional.of(usuario));
@@ -81,6 +82,21 @@ class ConfirmacaoEmailTests {
         assertDoesNotThrow(() -> service.solicitar(usuario.getEmail()));
         assertFalse(usuario.isEmailConfirmado());
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM confirmacoes_email", Integer.class));
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"autenticacao", "timeout", "conexao", "preparacao", "rejeicao"})
+    void reenvioComFalhaPreservaLinkAnterior(String falha) {
+        service.solicitar(usuario.getEmail());
+        String anterior = token;
+        Timestamp validade = jdbc.queryForObject("SELECT expira_em FROM confirmacoes_email", Timestamp.class);
+        doThrow(EmailFalhasTests.falha(falha)).when(mail).send(any(SimpleMailMessage.class));
+        EmailFalhasTests.verificarLogSeguro(ConfirmacaoEmailService.class,
+                () -> service.solicitar(usuario.getEmail()), anterior, usuario.getEmail());
+        assertEquals(RecuperacaoSenhaService.hash(anterior), jdbc.queryForObject("SELECT token_hash FROM confirmacoes_email", String.class));
+        assertEquals(validade, jdbc.queryForObject("SELECT expira_em FROM confirmacoes_email", Timestamp.class));
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM confirmacoes_email", Integer.class));
+        assertFalse(usuario.isEmailConfirmado());
+        assertDoesNotThrow(() -> service.confirmar(anterior));
     }
     @Test void migrationPreservaContasAnterioresENovasSaoPendentes() throws Exception {
         var banco = new JdbcTemplate(new DriverManagerDataSource("jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=PostgreSQL", "sa", ""));

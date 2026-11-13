@@ -2,12 +2,13 @@ import { X, Download, Trash2 } from 'lucide-react'
 import { categoria, tamanho } from '../lib/api.js'
 import { useArquivoMaterial } from '../lib/useArquivoMaterial.js'
 import { DadosPublicacao } from './DadosPublicacao.jsx'
+import { PreviaPdf } from './PreviaPdf.jsx'
 
 export function VisualizadorMaterial({ material, disciplina, onClose, onExcluir }) {
   const { url, erro } = useArquivoMaterial(material)
   if (!material) return null
-  const cat = categoria(material.tipoArquivo)
-  const imagemSegura = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(material.tipoArquivo)
+  const cat = material.arquivoValidado ? categoria(material.tipoArquivo) : 'Outro'
+  const imagemSegura = material.arquivoValidado && ['image/jpeg', 'image/png', 'image/gif'].includes(material.tipoArquivo)
 
   return (
     <div className="fixed inset-0 z-40 grid place-items-center bg-foreground/40 p-4" onMouseDown={e => e.target === e.currentTarget && onClose()}>
@@ -28,7 +29,7 @@ export function VisualizadorMaterial({ material, disciplina, onClose, onExcluir 
         <div className="mt-4 overflow-hidden rounded-lg border border-border bg-surface-container">
           {erro && <p role="alert" className="p-4 text-destructive">{erro}</p>}
           {!url && !erro && <p role="status" className="p-4">Carregando arquivo…</p>}
-          {url && cat === 'PDF' && <iframe src={url} title={material.titulo} className="h-[60vh] w-full" />}
+          {url && cat === 'PDF' && <PreviaPdf url={url} titulo={material.titulo} />}
           {url && imagemSegura && <img src={url} alt={material.titulo} className="mx-auto max-h-[60vh] object-contain" />}
           {cat !== 'PDF' && !imagemSegura && (
             <p className="p-8 text-center text-muted-foreground">Este formato não tem prévia. Baixe o arquivo para abrir.</p>

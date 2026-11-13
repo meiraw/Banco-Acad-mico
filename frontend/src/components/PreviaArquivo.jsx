@@ -1,5 +1,6 @@
 import { FileText, ImageIcon, Presentation, FileQuestion } from 'lucide-react'
 import { api } from '../lib/api.js'
+import { PreviaPdf } from './PreviaPdf.jsx'
 
 export function PreviaArquivo({ material, categoriaTipo }) {
   const url = api.urlArquivo(material.id)
@@ -9,14 +10,10 @@ export function PreviaArquivo({ material, categoriaTipo }) {
     <div className="relative h-32 w-full overflow-hidden border-b border-border bg-surface-container">
       {material.statusModeracao && material.statusModeracao !== 'APROVADO' ? (
         <div className="flex size-full items-center justify-center px-4 text-center text-sm text-muted-foreground">Abra a publicação para visualizar o arquivo.</div>
+      ) : !material.arquivoValidado ? (
+        <div className="flex size-full items-center justify-center text-sm text-muted-foreground">Disponível para download</div>
       ) : categoriaTipo === 'PDF' ? (
-        <iframe
-          src={`${url}#toolbar=0&navpanes=0&view=FitH`}
-          title={`Prévia de ${material.titulo}`}
-          tabIndex={-1}
-          aria-hidden
-          className="pointer-events-none h-[420px] w-full origin-top scale-[0.55]"
-        />
+        <PreviaPdf url={url} titulo={material.titulo} miniatura />
       ) : categoriaTipo === 'Imagem' ? (
         <img src={url} alt={`Prévia de ${material.titulo}`} loading="lazy" className="size-full object-cover" />
       ) : (

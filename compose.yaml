@@ -1,6 +1,13 @@
 name: banco-academico
 
 services:
+  clamav:
+    image: clamav/clamav:stable
+    profiles: [antimalware]
+    ports:
+      - "127.0.0.1:3310:3310"
+    volumes:
+      - assinaturas-antimalware:/var/lib/clamav
   postgres:
     image: postgres:17
     environment:
@@ -13,4 +20,5 @@ services:
       - dados-academicos:/var/lib/postgresql/data
 
 volumes:
+  assinaturas-antimalware:
   dados-academicos:

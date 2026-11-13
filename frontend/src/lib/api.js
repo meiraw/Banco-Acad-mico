@@ -27,6 +27,19 @@ const reqPagina = path => req(path).then(resultado => {
 })
 
 export const api = {
+  discussoes: (filtros = {}) => reqPagina(`/forum/discussoes?${new URLSearchParams(filtros)}`),
+  discussao: id => req(`/forum/discussoes/${encodeURIComponent(id)}`),
+  criarDiscussao: dados => req('/forum/discussoes', { method: 'POST', ...json(dados) }),
+  editarDiscussao: (id, dados) => req(`/forum/discussoes/${encodeURIComponent(id)}`, { method: 'PUT', ...json(dados) }),
+  excluirDiscussao: id => req(`/forum/discussoes/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  respostasForum: (id, pagina = 0) => reqPagina(`/forum/discussoes/${encodeURIComponent(id)}/respostas?page=${pagina}&size=20`),
+  responderForum: (id, conteudo) => req(`/forum/discussoes/${encodeURIComponent(id)}/respostas`, { method: 'POST', ...json({ conteudo }) }),
+  editarRespostaForum: (id, respostaId, dados) => req(`/forum/discussoes/${encodeURIComponent(id)}/respostas/${encodeURIComponent(respostaId)}`, { method: 'PUT', ...json(dados) }),
+  excluirRespostaForum: (id, respostaId) => req(`/forum/discussoes/${encodeURIComponent(id)}/respostas/${encodeURIComponent(respostaId)}`, { method: 'DELETE' }),
+  favoritos: (pagina = 0, tamanho = 12) => reqPagina(`/favoritos?page=${pagina}&size=${tamanho}`),
+  favoritosIds: (pagina = 0) => reqPagina(`/favoritos/ids?page=${pagina}&size=200`),
+  adicionarFavorito: id => req(`/favoritos/${encodeURIComponent(id)}`, { method: 'PUT' }),
+  removerFavorito: id => req(`/favoritos/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   materiaisPendentes: (pagina = 0) => reqPagina(`/admin/materiais/pendentes?pagina=${pagina}`),
   aprovarMaterial: id => req(`/admin/materiais/${id}/aprovar`, { method: 'PATCH' }),
   rejeitarMaterial: (id, justificativa) => req(`/admin/materiais/${id}/rejeitar`, { method: 'PATCH', ...json({ justificativa }) }),
@@ -42,6 +55,8 @@ export const api = {
   respostas: (id, comentarioId, pagina = 0) => req(`/material/${id}/comentarios/${comentarioId}/respostas?pagina=${pagina}`),
   responder: (id, comentarioId, texto, respostaPaiId) => req(`/material/${id}/comentarios/${comentarioId}/respostas`, { method: 'POST', ...json({ texto, ...(respostaPaiId ? { respostaPaiId } : {}) }) }),
   meuPerfil: () => req('/perfil'),
+  atualizarPerfil: ({ semestreAtual }) => req('/perfil', { method: 'PUT', ...json({ semestreAtual }) }),
+  alterarSenha: dados => req('/perfil/senha', { method: 'PUT', ...json(dados) }),
   minhasPublicacoes: (pagina = 0) => reqPagina(`/perfil/publicacoes?pagina=${pagina}`),
   fotoPerfil: () => req('/perfil/foto', { resposta: 'blob' }),
   salvarFotoPerfil: foto => {

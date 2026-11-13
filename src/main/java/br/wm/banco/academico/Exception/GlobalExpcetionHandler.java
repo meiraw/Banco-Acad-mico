@@ -7,6 +7,28 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExpcetionHandler {
+        @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+        public ResponseEntity<ErrorResponse> handleParametroInvalido() {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Parâmetro inválido.", 400));
+        }
+        @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+        public ResponseEntity<ErrorResponse> handleEdicaoConcorrente() {
+            return ResponseEntity.status(409).body(new ErrorResponse("O conteúdo mudou. Atualize a página antes de editar.", 409));
+        }
+        @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+        public ResponseEntity<ErrorResponse> handleIntegridade() {
+            return ResponseEntity.status(409).body(new ErrorResponse("A operação conflita com registros vinculados. Atualize a página e tente novamente.", 409));
+        }
+        @ExceptionHandler({org.springframework.web.multipart.support.MissingServletRequestPartException.class,
+                org.springframework.http.converter.HttpMessageNotReadableException.class,
+                org.springframework.web.multipart.MultipartException.class})
+        public ResponseEntity<ErrorResponse> handleMultipartInvalido(Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Requisição inválida. Envie os dados e o arquivo nos campos esperados.", 400));
+        }
+        @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+        public ResponseEntity<ErrorResponse> handleTipoInvalido() {
+            return ResponseEntity.status(415).body(new ErrorResponse("Tipo de conteúdo não suportado.", 415));
+        }
         @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
         public ResponseEntity<ErrorResponse> handleUploadMuitoGrande() {
             return ResponseEntity.status(413).body(new ErrorResponse("O arquivo excede o tamanho permitido.", 413));

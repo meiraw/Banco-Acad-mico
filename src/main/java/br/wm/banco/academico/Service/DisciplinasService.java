@@ -23,10 +23,13 @@ public class DisciplinasService {
     //Injeção de dependencia , subtituimos o @Autowired pelo metodo
     private final DisciplinasRepository disciplinasRepository;
     private final SemestreService semestreService;
+    private final br.wm.banco.academico.Repository.DiscussaoRepository discussoes;
     public DisciplinasService(
-    DisciplinasRepository disciplinasRepository,SemestreService semestreService){
+    DisciplinasRepository disciplinasRepository,SemestreService semestreService,
+    br.wm.banco.academico.Repository.DiscussaoRepository discussoes){
         this.disciplinasRepository = disciplinasRepository;
         this.semestreService = semestreService;
+        this.discussoes = discussoes;
     }
 
 
@@ -66,6 +69,9 @@ public class DisciplinasService {
     @Transactional
     public void excluir (UUID id){
         DisciplinasModel deletar = buscarPorId(id);
+        if (discussoes.existsByDisciplinaId(id))
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                "Esta disciplina possui histórico no fórum e não pode ser excluída.");
         disciplinasRepository.delete(deletar);
     }
 }

@@ -9,5 +9,7 @@ export const permiteReferencia = tipo => tipo === 'LIVRO' || tipo === 'ARTIGO'
 
 export function dadosPublicacao(tipoPublicacao, referencia) {
   if (!TIPOS_PUBLICACAO.some(([valor]) => valor === tipoPublicacao)) throw new Error('Selecione o tipo de publicação.')
-  return { tipoPublicacao, referenciaBibliografica: permiteReferencia(tipoPublicacao) ? referencia.trim() || null : null }
+  const referenciaNormalizada = (referencia ?? '').trim()
+  if (tipoPublicacao === 'ARTIGO' && !referenciaNormalizada) throw new Error('Informe a referência bibliográfica do artigo.')
+  return { tipoPublicacao, referenciaBibliografica: permiteReferencia(tipoPublicacao) ? referenciaNormalizada || null : null }
 }

@@ -1,83 +1,33 @@
 # Confirmação de e-mail
 
-> Configuração atual: cadastro e login aceitam endereços de qualquer provedor e não exigem confirmação por e-mail nem envio SMTP. O cadastro entra diretamente após criar a conta. A validação de formato não comprova a existência do endereço. Os componentes de confirmação descritos abaixo permanecem disponíveis, mas não são acionados pelo cadastro nem bloqueiam o acesso. SMTP só é necessário para enviar mensagens, como na recuperação de senha. Não é necessário ativar o perfil gmail para cadastro e login; se foi ativado apenas para isso, remova gmail de SPRING_PROFILES_ACTIVE.
+## Comportamento atual
 
-Novos cadastros precisam confirmar a posse do e-mail antes do login. A senha é exclusiva do Banco Acadêmico; nunca se pede a senha da caixa de entrada do usuário. A restrição institucional da interface continua existente.
+O cadastro salva a conta sem enviar e-mail automaticamente. O login permite contas não confirmadas. Esta manutenção não tornou a confirmação obrigatória nem alterou JWT ou permissões.
 
-## Configuração
+O backend mantém os endpoints públicos `POST /auth/reenviar-confirmacao` e `POST /auth/confirmar-email`. O formulário atual de login não oferece botão de reenvio. A existência dos endpoints não significa que o cadastro esteja integrado a eles.
 
-No IntelliJ, em Run > Edit Configurations > Environment variables, mantenha DB_PASSWORD e JWT_SECRET e acrescente as configurações do seu provedor:
+O reenvio aceita `{"email":"usuario@example.test"}` e responde genericamente para conta ausente, confirmada ou pendente. Para contas pendentes, gera 32 bytes aleatórios, representados em Base64URL (43 caracteres); somente SHA-256 é armazenado em `confirmacoes_email`. A validade é de 15 minutos, com uso único. O link usa o fragmento `#token=`; a confirmação recebe `{"token":"TOKEN_RECEBIDO"}`.
 
-```text
-SMTP_HOST=servidor-do-provedor
-SMTP_PORT=587
-SMTP_USERNAME=usuario-de-envio
-SMTP_PASSWORD=credencial-de-envio
-SMTP_FROM=remetente-autorizado
-SMTP_AUTH=true
-SMTP_STARTTLS=true
-EMAIL_CONFIRMATION_URL=https://seu-frontend/confirmar-email
-PASSWORD_RESET_URL=https://seu-frontend/redefinir-senha
-```
+Uma substituição bem-sucedida invalida o link anterior. A substituição e o envio são executados em transação própria, com bloqueio da linha do usuário. Se Spring Mail lançar `MailException`, a transação é revertida antes do tratamento da falha: o link anterior mantém sua validade original e o candidato novo não fica ativo. Se não existia link, nenhum novo registro permanece. Isso não estende validade nem reativa links expirados.
 
-Os valores são ilustrativos. Use um servidor com STARTTLS na porta configurada. A credencial SMTP pode ser uma senha de aplicativo ou credencial específica do serviço, conforme o provedor. Não coloque segredos no Git. O Spring não carrega `.env` automaticamente. Reinicie o backend após alterar o ambiente.
+A migration V8 existente preservou contas anteriores como confirmadas e definiu novas contas como pendentes. Não foi criada nem alterada migration nesta manutenção. A marca de confirmação não é exigida pelo login atual.
 
-As duas URLs são do **frontend** e precisam estar acessíveis para quem recebe o e-mail. Para testes no mesmo computador podem ser `http://localhost:5173/confirmar-email` e `http://localhost:5173/redefinir-senha`. Para testes em redes diferentes, use a URL pública do frontend e configure seu proxy para alcançar a API. O túnel apenas do backend não publica o frontend. Configure CORS_ALLOWED_ORIGINS quando houver chamadas diretas entre origens e fallback do React nas duas rotas.
+## Configuração e operação
 
-## Envio pelo Gmail
+O mesmo `JavaMailSender` atende confirmação, recuperação e moderação. Veja [RECUPERACAO_SENHA.md](RECUPERACAO_SENHA.md) e [EXECUCAO_LOCAL.md](EXECUCAO_LOCAL.md) para variáveis SMTP. O `application.properties` importa opcionalmente o `.env` da raiz como Java Properties; execute a partir da raiz e use valores sem aspas. Variáveis de ambiente prevalecem. Não versionar credenciais nem habilitar debug SMTP.
 
-Foi criado `src/main/resources/application-gmail.properties`, com SMTP do Gmail na porta 587, autenticação e STARTTLS obrigatório. Ative esse perfil para usar Gmail sem alterar as configurações dos demais ambientes.
+Conexão, leitura e escrita possuem timeouts de 5 segundos cada. Eles não representam um limite global de 5 segundos para toda a requisição. O envio é síncrono, sem fila ou retry automático.
 
-1. Na conta que enviará as mensagens, habilite a verificação em duas etapas.
-2. Acesse https://myaccount.google.com/apppasswords e gere uma senha de aplicativo para “Banco Acadêmico”. Não use a senha comum da conta. A disponibilidade depende das políticas da conta; em contas institucionais Google Workspace pode ser necessário falar com o administrador.
-3. No IntelliJ, abra Run > Edit Configurations, selecione o backend e abra a tabela de Environment variables. Mantenha DB_PASSWORD e JWT_SECRET e adicione:
+Os logs informam fluxo e categoria controlada (`AUTENTICACAO`, `TIMEOUT`, `CONEXAO`, `PREPARACAO`, `FORMATO`, `TRANSPORTE` ou `INTERNA`), sem texto bruto da exceção, stack trace SMTP, destinatário ou token. Rejeições SMTP são classificadas como `TRANSPORTE`. A resposta genérica 200 não comprova envio ou entrega.
 
-| Nome | Valor |
-| --- | --- |
-| SPRING_PROFILES_ACTIVE | gmail |
-| SMTP_USERNAME | endereço Gmail que enviará as mensagens |
-| SMTP_PASSWORD | senha de aplicativo gerada, sem os espaços de apresentação |
-| EMAIL_CONFIRMATION_URL | http://localhost:5173/confirmar-email para teste local |
-| PASSWORD_RESET_URL | http://localhost:5173/redefinir-senha para teste local |
+Após corrigir SMTP, é possível solicitar outro link respeitando os limites existentes: 10 solicitações por IP e 3 por e-mail por 15 minutos; confirmação limitada a 20 por IP e 5 por token. Atrás de proxy, configure identificação confiável de IP na infraestrutura.
 
-Se já houver outros perfis ativos, acrescente `gmail` à lista separada por vírgulas. Se SMTP_FROM já estiver definido, use o mesmo endereço de SMTP_USERNAME, a menos que tenha um remetente alternativo autorizado. Sem SMTP_FROM, o perfil usa automaticamente SMTP_USERNAME.
+## Limitação transacional
 
-4. Reinicie o backend e o frontend. Na tela de login use “Reenviar confirmação de e-mail” para uma conta pendente ou solicite recuperação de uma conta cadastrada. Confira também spam e o console do backend. Não compartilhe links com tokens.
-5. Abra o link recebido, confirme a conta e faça login. Para links abertos em outro computador, substitua localhost pela URL acessível do frontend antes de solicitar o envio.
+O SMTP participa antes do commit do banco, mas não é um recurso transacional. Se ele aceitar a mensagem e o commit falhar depois, o link enviado pode não ser utilizável. Uma falha de conexão também pode deixar a aceitação remota incerta. Não há garantia de entrega ou de envio exatamente uma vez. Retry e outbox exigem uma proposta separada; não foram adicionados.
 
-O remetente pode ser Gmail e o destinatário institucional; o provedor do destinatário não muda as configurações de envio. O frontend continua exigindo e-mail UNEMAT no cadastro. Para cadastrar Gmail como usuário seria preciso alterar essa regra separadamente.
+## Testes seguros
 
-Falhas comuns: credenciais recusadas indicam senha de aplicativo ou política da conta; timeout indica conectividade com o SMTP; remetente recusado exige revisar SMTP_FROM. Uma resposta 200 na API não garante entrega. Não habilite logs SMTP contendo dados de autenticação.
+`ConfirmacaoEmailTests` verifica hashes, expiração, uso único, substituição e rollback de falhas simuladas com JDBC/H2. `EmailFalhasTests` e os testes de reenvio verificam diagnóstico seguro. `SmtpLocalTests` usa `JavaMailSenderImpl` contra um servidor descartável em `127.0.0.1`, com portas efêmeras e dados fictícios. Não utiliza SMTP externo nem credenciais do `.env`. `SmtpRealTests` é opt-in e não faz parte desta verificação.
 
-Referências: https://support.google.com/mail/answer/185833 e https://support.google.com/mail/answer/7104828.
-
-## Fluxo de confirmação
-
-- `POST /usuario` cria uma conta pendente, salva a senha com BCrypt e tenta enviar o link. O frontend mostra orientação para verificar a caixa de entrada, sem login automático.
-- O link contém `#token=...`; a tela mantém o token em memória e remove o fragmento da barra. Só o clique em “Confirmar meu e-mail” consome o token.
-- `POST /auth/confirmar-email`, corpo `{"token":"TOKEN_DO_EMAIL"}`, ativa a conta. Link inválido, expirado ou reutilizado retorna 400.
-- `POST /auth/reenviar-confirmacao`, corpo `{"email":"usuario@unemat.br"}`, retorna mensagem genérica para conta ausente, já confirmada ou pendente. O botão está no login.
-- Login de conta pendente com senha correta retorna 403. JWTs de conta pendente são rejeitados com 401.
-- Uma troca de e-mail pela administração exige nova confirmação, revoga recuperações de senha pendentes e incrementa a versão das credenciais para invalidar sessões anteriores.
-
-Essas chamadas públicas não enviam Authorization. Com o proxy Vite, o frontend usa `/api/auth/...`; diretamente na API, `/auth/...`.
-
-## Dados e limites
-
-A migration V8 cria `confirmacoes_email` e `usuarios.email_confirmado`. Contas anteriores à migration permanecem confirmadas para preservar o acesso; isso é compatibilidade e **não prova que seus endereços foram verificados**. Novas contas começam pendentes.
-
-Tokens aleatórios de 32 bytes são guardados somente como SHA-256, valem por 15 minutos e só podem ser usados uma vez. O reenvio invalida o link anterior. Confirmação e reenvio bloqueiam a linha do usuário para serializar operações concorrentes.
-
-Reenvio: até 10 por IP e 3 por e-mail em janela de 15 minutos. Confirmação: até 20 por IP e 5 por token. Atrás de proxy, a infraestrutura precisa resolver o IP de forma confiável; sem isso clientes podem compartilhar a cota do proxy.
-
-Uma falha SMTP mantém a conta pendente e remove o token não enviado. O log registra mensagem fixa, sem token ou destinatário. A resposta de reenvio continua genérica: status 200 não comprova entrega. Depois de corrigir SMTP, use o reenvio.
-
-## Verificação
-
-```powershell
-.\mvnw.cmd '-Dtest=AuthenticationTests,RecuperacaoSenhaTests,RecuperacaoEndpointTests,ConfirmacaoEmailTests' test
-cd frontend
-npm run build
-```
-
-Os testes automatizados simulam SMTP. A entrega real e a aplicação da migration no PostgreSQL devem ser verificadas no ambiente de implantação. Para o teste manual, cadastre uma conta nova, abra o e-mail, confirme, faça login e teste recuperação de senha. Não reabra um token já consumido como teste de sucesso.
+Regressão executada em 12/11/2026: 135 testes, 134 aprovados e 1 ignorado por falta de permissão para links simbólicos; zero falhas ou erros. Foram excluídos `ApplicationTests` (ambiente completo) e `SmtpRealTests` (envio externo).

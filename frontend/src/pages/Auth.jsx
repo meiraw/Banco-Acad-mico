@@ -114,6 +114,7 @@ export function Auth() {
 
   return (
     <AuthLayout dividido={aba !== 'recuperar'}>
+        {location.state?.senhaAlterada && <p role="status" className="mb-4 rounded-lg bg-surface-container p-3 text-sm text-secondary">{location.state.senhaAlterada}</p>}
         {aba === 'recuperar' && emailEnviado ? (
           <form onSubmit={validarCodigo} className="card-surface space-y-4 p-6">
             <MailCheck className="size-8 text-secondary" />

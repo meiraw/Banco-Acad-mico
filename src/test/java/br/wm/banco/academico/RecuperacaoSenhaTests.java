@@ -29,7 +29,8 @@ class RecuperacaoSenhaTests {
   jdbc = new JdbcTemplate(new DriverManagerDataSource("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", ""));
   jdbc.execute("CREATE TABLE recuperacoes_senha(token_hash CHAR(64) PRIMARY KEY, usuario_id UUID, expira_em TIMESTAMP WITH TIME ZONE)");
   usuarios = mock(UsuarioRepository.class); mail = mock(RecuperacaoEmailService.class);
-  service = new RecuperacaoSenhaService(usuarios, jdbc, encoder, mail);
+  service = new RecuperacaoSenhaService(usuarios, jdbc, encoder, mail,
+      new org.springframework.jdbc.datasource.DataSourceTransactionManager(jdbc.getDataSource()));
   usuario = new UsuarioModel(); ReflectionTestUtils.setField(usuario, "id", UUID.randomUUID());
   usuario.setEmail("teste@unemat.br"); usuario.setNome("Teste"); usuario.setPerfil(PerfilUsuario.USER);
   usuario.setSenha(encoder.encode("Antiga123!"));
@@ -85,9 +86,11 @@ class RecuperacaoSenhaTests {
   service.solicitar(usuario.getEmail()); assertNotEquals(anterior, token);
   assertThrows(ResponseStatusException.class, () -> service.validarCodigo(usuario.getEmail(), anterior));
   assertThrows(ResponseStatusException.class, () -> service.redefinir(anterior, "NovaSenha123!"));
+  String hashAnterior = jdbc.queryForObject("SELECT token_hash FROM recuperacoes_senha", String.class);
   doThrow(new MailSendException("falha")).when(mail).enviar(anyString(), anyString());
   assertDoesNotThrow(() -> service.solicitar(usuario.getEmail()));
-  assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM recuperacoes_senha", Integer.class));
+  assertEquals(hashAnterior, jdbc.queryForObject("SELECT token_hash FROM recuperacoes_senha", String.class));
+  assertDoesNotThrow(() -> service.validarCodigo(usuario.getEmail(), token));
  }
  @Test void migrationPreservaUsuarioExistenteEExcluiTokensEmCascata() throws Exception {
   var banco = new JdbcTemplate(new DriverManagerDataSource("jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=PostgreSQL", "sa", ""));
@@ -103,6 +106,24 @@ class RecuperacaoSenhaTests {
    banco.update("DELETE FROM usuarios WHERE id = ?", usuario.getId());
    assertEquals(0, banco.queryForObject("SELECT count(*) FROM recuperacoes_senha", Integer.class));
   }
+ }
+ @org.junit.jupiter.params.ParameterizedTest
+ @org.junit.jupiter.params.provider.ValueSource(strings = {"autenticacao", "timeout", "conexao", "preparacao", "rejeicao"})
+ void reenvioComFalhaPreservaCodigoEValidade(String falha) {
+  service.solicitar(usuario.getEmail());
+  String anterior = token;
+  Timestamp validade = jdbc.queryForObject("SELECT expira_em FROM recuperacoes_senha", Timestamp.class);
+  doThrow(EmailFalhasTests.falha(falha)).when(mail).enviar(anyString(), anyString());
+  EmailFalhasTests.verificarLogSeguro(RecuperacaoSenhaService.class,
+      () -> service.solicitar(usuario.getEmail()), anterior, usuario.getEmail());
+  assertEquals(validade, jdbc.queryForObject("SELECT expira_em FROM recuperacoes_senha", Timestamp.class));
+  assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM recuperacoes_senha", Integer.class));
+  assertDoesNotThrow(() -> service.validarCodigo(usuario.getEmail(), anterior));
+ }
+ @Test void falhaNoPrimeiroEnvioNaoDeixaCodigoAtivo() {
+  doThrow(new MailSendException("falha simulada")).when(mail).enviar(anyString(), anyString());
+  assertDoesNotThrow(() -> service.solicitar(usuario.getEmail()));
+  assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM recuperacoes_senha", Integer.class));
  }
  @Test void rejeitaSenhaAcimaDoLimiteBcryptEmBytes() {
   service.solicitar(usuario.getEmail());

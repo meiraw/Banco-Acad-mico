@@ -1,0 +1,280 @@
+19:59:19 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:20 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:21 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+19:59:21 [vite] Pre-transform error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+19:59:22 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:23 [vite] Pre-transform error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+19:59:23 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:23 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:25 [vite] Pre-transform error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+19:59:25 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:25 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:26 [vite] Pre-transform error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+19:59:26 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:27 [vite] Internal server error: Failed to resolve import "./pages/Forum.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:17:22
+  32 |  import { Configuracoes } from "./pages/Configuracoes.jsx";
+  33 |  import { TemaProvider } from "./lib/useTema.js";
+  34 |  import { Forum } from "./pages/Forum.jsx";
+     |                         ^
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 19)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:28 [vite] Pre-transform error: Failed to resolve import "./pages/Discussao.jsx" from "src/App.jsx". Does the file exist?
+19:59:28 [vite] Internal server error: Failed to resolve import "./pages/Discussao.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:19:26
+  34 |  import { Forum } from "./pages/Forum.jsx";
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+     |                             ^
+  37 |  export default function App() {
+  38 |    return /* @__PURE__ */ jsxDEV(SessaoProvider, { children: /* @__PURE__ */ jsxDEV(InterfaceConta, {}, void 0, false, {
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 21)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+19:59:28 [vite] Internal server error: Failed to resolve import "./pages/Discussao.jsx" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/wener/Meus Projetos/Banco acadêmico/banco.academico/frontend/src/App.jsx:19:26
+  34 |  import { Forum } from "./pages/Forum.jsx";
+  35 |  import { NovaDiscussao } from "./pages/NovaDiscussao.jsx";
+  36 |  import { Discussao } from "./pages/Discussao.jsx";
+     |                             ^
+  37 |  export default function App() {
+  38 |    return /* @__PURE__ */ jsxDEV(SessaoProvider, { children: /* @__PURE__ */ jsxDEV(InterfaceConta, {}, void 0, false, {
+      at TransformPluginContext._formatError (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 21)
+      at async TransformPluginContext.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///C:/Users/wener/Meus%20Projetos/Banco%20acad%C3%AAmico/banco.academico/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+21:21:47 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:47 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:47 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:47 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:54 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:54 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:54 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:54 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:55 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:55 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:55 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+21:21:55 [vite] http proxy error: /perfil
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)

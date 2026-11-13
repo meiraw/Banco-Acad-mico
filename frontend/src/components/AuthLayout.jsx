@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Logo } from './Logo.jsx'
+import { BotaoVoltar } from './BotaoVoltar.jsx'
 import booksLogin from '../assets/images/books-login.png'
 
 export function AuthLayout({ children, dividido = true }) {
@@ -10,11 +11,11 @@ export function AuthLayout({ children, dividido = true }) {
     </aside>}
     <main className={dividido ? 'flex min-h-screen min-w-0 items-center justify-center px-4 py-8 sm:px-8 lg:px-12' : 'w-full max-w-md'}>
       <div className="w-full max-w-md">
+        <BotaoVoltar className="mb-4" />
         <div className="mb-6 text-center">
           <Link to="/" className="inline-block max-w-full">
             <Logo className="w-72 max-w-full sm:w-80" />
           </Link>
-          <p className="label-mono mt-2 text-muted-foreground">Apoio institucional para acadêmicos da UNEMAT</p>
         </div>
         {children}
       </div>

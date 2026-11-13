@@ -43,8 +43,12 @@ class PerfilFotoTests {
     @Configuration
     @EnableWebMvc
     @org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-    @Import({SecurityConfig.class, PerfilController.class, FotoPerfilService.class, GlobalExpcetionHandler.class})
+    @Import({SecurityConfig.class, PerfilController.class, FotoPerfilService.class,
+            br.wm.banco.academico.Service.LimiteUploadService.class,
+            br.wm.banco.academico.Service.AntimalwareService.class, GlobalExpcetionHandler.class})
     static class Config {
+        @Bean br.wm.banco.academico.Service.PerfilService contas() { return mock(br.wm.banco.academico.Service.PerfilService.class); }
+        @Bean br.wm.banco.academico.Service.RecuperacaoLimiteService limitesSenha() { return mock(br.wm.banco.academico.Service.RecuperacaoLimiteService.class); }
         @Bean UsuarioRepository usuarios() { return mock(UsuarioRepository.class); }
         @Bean TokenService tokens() { return new TokenService(AuthenticationTests.SECRET); }
         @Bean JdbcTemplate jdbc() throws Exception {
