@@ -39,3 +39,5 @@ node_modules/
 frontend/dist/
 Uploads/
 frontend/vite-local.log
+frontend/vite-dev.log
+backend-local.log
