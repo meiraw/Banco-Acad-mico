@@ -17,7 +17,7 @@ npm run dev
 
 Acesse **http://localhost:5173**. O frontend está configurado para consumir o
 backend em **http://localhost:8080**. Iniciar o Vite não inicia o backend nem o banco.
-O backend está configurado na porta 8080. Consulte ../EXECUCAO_LOCAL.md para configurar banco, JWT e envio de e-mail.
+O backend está configurado na porta 8080. Consulte a seção [Executar localmente do projeto](../README.md#executar-localmente) para configurar banco, JWT e envio de e-mail.
 
 Para permitir acesso ao servidor de desenvolvimento pela rede local:
 
