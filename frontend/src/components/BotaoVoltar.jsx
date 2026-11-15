@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 
-export function BotaoVoltar({ destino = '/', className = '' }) {
+export function BotaoVoltar({ destino = '/', usarHistorico = true, className = '' }) {
   const navigate = useNavigate()
 
   function voltar() {
-    if (window.history.state?.idx > 0) navigate(-1)
+    if (usarHistorico && window.history.state?.idx > 0) navigate(-1)
     else navigate(destino, { replace: true })
   }
 
