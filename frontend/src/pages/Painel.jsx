@@ -28,12 +28,6 @@ export function Painel() {
   const buscaRef = useRef(null)
 
   useEffect(() => {
-    if (!filtrosAbertos) return
-    document.documentElement.classList.add('busca-filtros-abertos')
-    return () => document.documentElement.classList.remove('busca-filtros-abertos')
-  }, [filtrosAbertos])
-
-  useEffect(() => {
     function fecharAoClicarFora(event) {
       if (!buscaRef.current?.contains(event.target)) setFiltrosAbertos(false)
     }
@@ -98,8 +92,6 @@ export function Painel() {
               onChange={e => setTermo(e.target.value)}
               placeholder="Buscar por título ou disciplina"
               aria-label="Pesquisar materiais"
-              aria-expanded={filtrosAbertos}
-              aria-controls="filtros-busca"
               className="input-base h-12 rounded-full pl-12 pr-28"
             />
             <button type="button" onClick={() => setFiltrosAbertos(abertos => !abertos)} aria-expanded={filtrosAbertos} aria-controls="filtros-busca" className="btn btn-ghost absolute right-2 top-1/2 -translate-y-1/2 rounded-full text-primary">
@@ -108,44 +100,45 @@ export function Painel() {
             </button>
           </div>
 
-          {filtrosAbertos && <section id="filtros-busca" aria-label="Filtros de busca" className="card-surface mt-3 space-y-4 p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold text-primary">Filtrar materiais</h2>
-            <button type="button" className="btn btn-ghost text-sm" onClick={() => { setParams({}); setTipo('Todos') }}>Limpar filtros</button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="filtro-curso" className="label-mono mr-1 text-muted-foreground">Curso</label>
-            <select id="filtro-curso" value={cursoId || ''} onChange={e => setParams(e.target.value ? { curso: e.target.value } : {})} className="input-base w-auto max-w-full">
+          {filtrosAbertos && <section id="filtros-busca" aria-label="Filtros de busca" className="card-surface mt-3 p-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="space-y-1.5">
+            <label htmlFor="filtro-curso" className="block text-sm text-muted-foreground">Curso</label>
+            <select id="filtro-curso" value={cursoId || ''} onChange={e => setParams(e.target.value ? { curso: e.target.value } : {})} className="input-base w-full">
               <option value="">Todos os cursos</option>
               {cursos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="label-mono mr-1 text-muted-foreground">Semestre</span>
-            <button onClick={() => selecionarSemestre(null)} className={`chip ${!semestreId ? 'on' : ''}`}>Todos</button>
-            {semestresVisiveis.map(s => (
-              <button key={s.id} onClick={() => selecionarSemestre(s.id)} className={`chip ${semestreId === s.id ? 'on' : ''}`}>{rotuloSemestre(s)}{!cursoId && ` · ${cursos.find(c => c.id === s.cursoId)?.nome || ''}`}</button>
-            ))}
+          <div className="space-y-1.5">
+            <label htmlFor="filtro-semestre" className="block text-sm text-muted-foreground">Semestre</label>
+            <select id="filtro-semestre" value={semestreId || ''} onChange={e => selecionarSemestre(e.target.value)} className="input-base w-full">
+              <option value="">Todos os semestres</option>
+              {semestresVisiveis.map(s => <option key={s.id} value={s.id}>{rotuloSemestre(s)}{!cursoId && ` · ${cursos.find(c => c.id === s.cursoId)?.nome || ''}`}</option>)}
+            </select>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="filtro-disciplina" className="label-mono mr-1 text-muted-foreground">Disciplina</label>
+          <div className="space-y-1.5">
+            <label htmlFor="filtro-disciplina" className="block text-sm text-muted-foreground">Disciplina</label>
             <select id="filtro-disciplina" value={disciplinaId || ''} onChange={e => {
               const next = new URLSearchParams(params)
               if (e.target.value) next.set('disciplina', e.target.value)
               else next.delete('disciplina')
               setParams(next)
-            }} className="input-base w-auto max-w-full">
+            }} className="input-base w-full">
               <option value="">Todas as disciplinas</option>
               {discVisiveis.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
             </select>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="label-mono mr-1 text-muted-foreground">Tipo</span>
-            {TIPOS.map(t => <button key={t} onClick={() => setTipo(t)} className={`chip ${tipo === t ? 'on' : ''}`}>{t}</button>)}
+          <div className="space-y-1.5">
+            <label htmlFor="filtro-formato" className="block text-sm text-muted-foreground">Formato</label>
+            <select id="filtro-formato" value={tipo} onChange={e => setTipo(e.target.value)} className="input-base w-full">
+              {TIPOS.map(t => <option key={t} value={t}>{t === 'Todos' ? 'Todos os formatos' : t}</option>)}
+            </select>
           </div>
-          <div className="flex justify-end">
-            <button type="button" className="btn btn-primary" onClick={() => setFiltrosAbertos(false)}>Ver resultados</button>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+            <p className="text-muted-foreground" role="status">{carregando ? 'Carregando…' : `${filtrados.length} ${filtrados.length === 1 ? 'material encontrado' : 'materiais encontrados'}`}</p>
+            <button type="button" disabled={!cursoId && !semestreId && !disciplinaId && tipo === 'Todos'} className="text-secondary hover:underline disabled:cursor-default disabled:opacity-40 disabled:no-underline" onClick={() => { setParams({}); setTipo('Todos') }}>Limpar filtros</button>
           </div>
           </section>}
           </div>

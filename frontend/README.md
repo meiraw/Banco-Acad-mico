@@ -1,12 +1,12 @@
 # Banco Acadêmico — Frontend
 
-Interface em React 18, Vite 5 e Tailwind CSS 3, com React Router e ícones Lucide.
+Interface em React 18, Vite 8 e Tailwind CSS 3, com React Router 7 e ícones Lucide.
 O visual usa azul-petróleo/verde-água, cores pastel para semestres, fontes Inter e
 JetBrains Mono e alternância de tema claro/escuro.
 
 ## Executar localmente
 
-Pré-requisitos: Node.js e npm, além da API Spring Boot com PostgreSQL disponível.
+Pré-requisitos: Node.js 22.13+ na linha 22, ou Node.js 24+, e npm, além da API Spring Boot com PostgreSQL disponível. A atualização foi validada com Node.js 24.15.0.
 Na pasta do projeto:
 
 ```bash
@@ -30,6 +30,8 @@ Outros comandos:
 ```bash
 npm run build    # gera os arquivos de produção em dist/
 npm run preview  # serve a build para conferência local
+npm test         # executa os testes automatizados do frontend
+npm audit        # consulta vulnerabilidades conhecidas nas dependências
 ```
 
 O proxy da API está definido em `vite.config.js`, em `server.proxy`. Caso o

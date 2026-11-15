@@ -24,9 +24,11 @@ import java.util.Set;
 public class MaterialController {
 
     private final MaterialService materialService;
+    private final br.wm.banco.academico.Service.EstatisticasMaterialService estatisticas;
 
-    public MaterialController (MaterialService materialService){
+    public MaterialController (MaterialService materialService, br.wm.banco.academico.Service.EstatisticasMaterialService estatisticas){
         this.materialService = materialService;
+        this.estatisticas = estatisticas;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -39,13 +41,16 @@ public class MaterialController {
     public ResponseEntity<Page<MaterialResponseDTO>> listar(Pageable pageable){
         Page<MaterialModel> listar = materialService.listarTudo(pageable);
         Page<MaterialResponseDTO> resposta = listar.map(MaterialResponseDTO:: new);
+        estatisticas.preencher(resposta.getContent());
         return ResponseEntity.ok(resposta);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MaterialResponseDTO> buscarPorId(@PathVariable UUID id ){
         MaterialModel  buscar = materialService.buscarPorId(id);
-        return ResponseEntity.ok(new MaterialResponseDTO (buscar));
+        var resposta = new MaterialResponseDTO(buscar);
+        estatisticas.preencher(java.util.List.of(resposta));
+        return ResponseEntity.ok(resposta);
     }
 
     @PutMapping("/{id}")

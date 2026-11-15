@@ -162,6 +162,38 @@ class ConfiguracoesTests {
         if (postgres) assertEquals(6, jdbc.queryForObject("SELECT tentativas FROM limites_recuperacao WHERE chave = ?", Integer.class,
             RecuperacaoSenhaService.hash("alterar-senha-conta:" + a.getId())));
     }
+    @Test void administradorTrocaSenhaSemMudarEmailRevogaJwtERecuperacao() throws Exception {
+        a.setPerfil(PerfilUsuario.ADMIN); usuarios.saveAndFlush(a);
+        String administrador = tokens.gerarToken(a);
+        String recuperacao = RecuperacaoSenhaService.hash("recuperacao-anterior");
+        jdbc.update("INSERT INTO recuperacoes_senha(token_hash,usuario_id,expira_em) VALUES (?,?,?)",
+            recuperacao, b.getId(), java.sql.Timestamp.from(java.time.Instant.now().plusSeconds(900)));
+        mvc.perform(put("/usuario/" + b.getId()).header("Authorization", "Bearer " + administrador)
+                .contentType("application/json")
+                .content(json(Map.of("nome", b.getNome(), "email", b.getEmail(), "senha", NOVA))))
+            .andExpect(status().isOk());
+        var salvo = usuarios.findById(b.getId()).orElseThrow();
+        assertEquals(1, salvo.getVersaoCredenciais());
+        assertEquals(b.getEmail(), salvo.getEmail());
+        assertTrue(encoder.matches(NOVA, salvo.getSenha()));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM recuperacoes_senha WHERE usuario_id = ?", Integer.class, b.getId()));
+        mvc.perform(get("/perfil").header("Authorization", "Bearer " + tokenB)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/perfil").header("Authorization", "Bearer " + tokens.gerarToken(salvo))).andExpect(status().isOk());
+    }
+    @Test void estudanteNaoPodeTrocarSenhaAdministrativaEExcessoDeBytesNaoAlteraConta() throws Exception {
+        var dados = Map.of("nome", b.getNome(), "email", b.getEmail(), "senha", NOVA);
+        mvc.perform(put("/usuario/" + b.getId()).header("Authorization", "Bearer " + tokenA)
+                .contentType("application/json").content(json(dados))).andExpect(status().isForbidden());
+        a.setPerfil(PerfilUsuario.ADMIN); usuarios.saveAndFlush(a);
+        mvc.perform(put("/usuario/" + b.getId()).header("Authorization", "Bearer " + tokens.gerarToken(a))
+                .contentType("application/json")
+                .content(json(Map.of("nome", b.getNome(), "email", b.getEmail(), "senha", "á".repeat(37)))))
+            .andExpect(status().isBadRequest());
+        var salvo = usuarios.findById(b.getId()).orElseThrow();
+        assertEquals(0, salvo.getVersaoCredenciais());
+        assertTrue(encoder.matches(ANTIGA, salvo.getSenha()));
+        mvc.perform(get("/perfil").header("Authorization", "Bearer " + tokenB)).andExpect(status().isOk());
+    }
     @Test void limiteDeIpBloqueiaAntesDaOperacao() throws Exception {
         when(limites.permitir("alterar-senha-ip:" + ip, 20)).thenReturn(false);
         trocar(tokenA, ANTIGA, NOVA, NOVA).andExpect(status().isTooManyRequests());

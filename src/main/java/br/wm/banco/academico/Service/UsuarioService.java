@@ -90,24 +90,29 @@ public class UsuarioService {
     @org.springframework.transaction.annotation.Transactional
     public UsuarioModel atualizar(UsuarioRequestDTO dto, UUID id){
 
-        UsuarioModel usuario = buscarId(id); // buscar o id do usuario já cadastrado
+        if (dto.getSenha().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "A senha deve ter no máximo 72 bytes.");
+        }
+        // Serializa alterações de credenciais para não perder incrementos da versão.
+        UsuarioModel usuario = usuarioRepository.bloquearPorId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
         String email = dto.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
         boolean mudouEmail = !usuario.getEmail().equals(email);
         if (mudouEmail) {
             usuario.setEmailConfirmado(false);
-            usuario.setVersaoCredenciais(usuario.getVersaoCredenciais() + 1);
         }
         usuario.setNome(dto.getNome());
         usuario.setEmail(email);
 
         String senhaCriptografada = passwordEncoder.encode(dto.getSenha());
         usuario.setSenha(senhaCriptografada);
+        // Este endpoint sempre substitui a senha, mesmo quando o e-mail é mantido.
+        usuario.setVersaoCredenciais(usuario.getVersaoCredenciais() + 1);
 
         UsuarioModel salvo = usuarioRepository.saveAndFlush(usuario);
-        if (mudouEmail) {
-            confirmacao.revogarRecuperacoes(salvo.getId());
-        }
+        confirmacao.revogarRecuperacoes(salvo.getId());
         return salvo;
     }
 

@@ -45,6 +45,7 @@ class PublicacaoTests {
     @Import({SecurityConfig.class, br.wm.banco.academico.Config.PaginacaoConfig.class, ComentarioMaterialController.class, MaterialController.class, PerfilMaterialController.class,
             CurtidaMaterialController.class, RespostaComentarioController.class, GlobalExpcetionHandler.class})
     static class Config {
+        @Bean EstatisticasMaterialService estatisticas(JdbcTemplate jdbc) { return new EstatisticasMaterialService(jdbc); }
         @Bean UsuarioRepository usuarios() { return mock(UsuarioRepository.class); }
         @Bean MaterialService materiais() { return mock(MaterialService.class); }
         @Bean TokenService tokens() { return new TokenService(AuthenticationTests.SECRET); }
@@ -53,7 +54,7 @@ class PublicacaoTests {
                     "jdbc:h2:mem:publicacoes;MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "sa", "", true));
             jdbc.execute("CREATE TABLE usuarios(id UUID PRIMARY KEY, nome VARCHAR(200))");
             jdbc.execute("CREATE TABLE materiais(id UUID PRIMARY KEY, titulo VARCHAR(255))");
-            for (String migration : List.of("V11__publicacoes_e_comentarios.sql", "V12__curtidas_e_respostas.sql", "V13__conversa_entre_respostas.sql", "V18__reacoes_negativas.sql")) {
+            for (String migration : List.of("V11__publicacoes_e_comentarios.sql", "V12__curtidas_e_respostas.sql", "V13__conversa_entre_respostas.sql", "V18__reacoes_negativas.sql", "V19__favoritos.sql")) {
             try (var stream = PublicacaoTests.class.getResourceAsStream("/db/migration/" + migration)) {
                 for (String sql : new String(stream.readAllBytes(), StandardCharsets.UTF_8).split(";"))
                     if (!sql.isBlank()) jdbc.execute(sql);
@@ -335,10 +336,11 @@ class PublicacaoTests {
         when(repo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         var criado = service.criar(UploadFixtures.dados("Resumo", "Descrição", disciplina.getId(), br.wm.banco.academico.Enum.TipoPublicacao.RESUMO, null),
                 new MockMultipartFile("arquivo", "../../teste.pdf", "application/pdf", UploadFixtures.pdf()), usuario.getEmail());
-        Path arquivoCriado = Path.of(criado.getCaminhoArquivo());
+        Path arquivoCriado = new ArmazenamentoService("Uploads", 0).permitido(criado.getCaminhoArquivo());
         try {
             assertEquals(usuario, criado.getAutor()); assertNotNull(criado.getPublicadoEm());
-            assertEquals(Path.of("Uploads").toAbsolutePath().normalize(), Path.of(criado.getCaminhoArquivo()).getParent());
+            assertEquals(arquivoCriado.getFileName().toString(), criado.getCaminhoArquivo());
+            assertEquals(Path.of("Uploads").toAbsolutePath().normalize(), arquivoCriado.getParent());
             when(repo.findById(id)).thenReturn(Optional.of(criado));
             criado.setStatusModeracao(br.wm.banco.academico.Enum.StatusModeracao.APROVADO);
             assertTrue(service.arquivo(id).exists());

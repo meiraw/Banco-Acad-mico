@@ -10,11 +10,16 @@ import java.security.Principal;
 @RequestMapping("/perfil/publicacoes")
 public class PerfilMaterialController {
     private final MaterialService materiais;
+    private final br.wm.banco.academico.Service.EstatisticasMaterialService estatisticas;
 
-    public PerfilMaterialController(MaterialService materiais) { this.materiais = materiais; }
+    public PerfilMaterialController(MaterialService materiais, br.wm.banco.academico.Service.EstatisticasMaterialService estatisticas) {
+        this.materiais = materiais; this.estatisticas = estatisticas;
+    }
 
     @GetMapping
     public Page<MaterialResponseDTO> listar(Principal principal, @RequestParam(defaultValue = "0") int pagina) {
-        return materiais.minhasPublicacoes(principal.getName(), pagina);
+        var resposta = materiais.minhasPublicacoes(principal.getName(), pagina);
+        estatisticas.preencher(resposta.getContent());
+        return resposta;
     }
 }

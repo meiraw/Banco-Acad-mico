@@ -128,7 +128,36 @@ class UploadSegurancaTests {
         storage.remover(link);
         assertTrue(Files.exists(arquivo)); assertTrue(Files.isSymbolicLink(link));
     }
-    @Test void exigeResponsabilidadeECotaAntesDeGravar() {
+    @Test void referenciaRelativaSobreviveTrocaDeRaizSemAlterarArquivoAntigo() throws Exception {
+        var antiga = new ArmazenamentoService(pasta.resolve("antiga").toString(), 0);
+        var nova = new ArmazenamentoService(pasta.resolve("nova").toString(), 0);
+        Path original = antiga.novoCaminho(); antiga.salvar(original, UploadFixtures.pdf());
+        String referencia = antiga.referencia(original);
+        assertEquals(original.getFileName().toString(), referencia);
+        Files.createDirectories(pasta.resolve("nova"));
+        Files.copy(original, pasta.resolve("nova").resolve(referencia));
+        assertArrayEquals(UploadFixtures.pdf(), Files.readAllBytes(nova.permitido(referencia)));
+        assertTrue(Files.exists(original));
+        assertEquals(original, antiga.permitido(original.toString()));
+    }
+    @Test void importaSomenteRaizesLegadasExplicitasDoWindowsELinux() throws Exception {
+        String nome = "validado-v1-" + java.util.UUID.randomUUID();
+        var storage = new ArmazenamentoService(pasta.toString(), 0, "C:\\antigo\\Uploads;/srv/antigo/Uploads");
+        storage.salvar(pasta.resolve(nome), UploadFixtures.pdf());
+        assertEquals(pasta.resolve(nome), storage.permitido("c:\\antigo\\Uploads\\" + nome));
+        assertEquals(pasta.resolve(nome), storage.permitido("/srv/antigo/Uploads/" + nome));
+        assertTrue(ArmazenamentoService.validado("C:\\antigo\\Uploads\\" + nome));
+        for (String caminho : new String[]{"C:\\outro\\" + nome, "/srv/antigo/Uploads-extra/" + nome,
+                "C:\\antigo\\Uploads\\..\\" + nome, "/srv/antigo/Uploads/sub/" + nome,
+                "../" + nome, "sub/" + nome, "", "C:arquivo"}) {
+            assertThrows(br.wm.banco.academico.Exception.ResourceNotFoundException.class, () -> storage.permitido(caminho));
+        }
+        var semMapeamento = new ArmazenamentoService(pasta.toString(), 0);
+        assertThrows(br.wm.banco.academico.Exception.ResourceNotFoundException.class,
+            () -> semMapeamento.permitido("C:\\antigo\\Uploads\\" + nome));
+        assertThrows(IllegalArgumentException.class, () -> new ArmazenamentoService(pasta.toString(), 0, "../Uploads"));
+    }
+    @Test void exigeCotaAntesDeGravarSemCheckboxDeResponsabilidade() {
         var repo = org.mockito.Mockito.mock(br.wm.banco.academico.Repository.MaterialRepository.class);
         var usuarios = org.mockito.Mockito.mock(br.wm.banco.academico.Repository.UsuarioRepository.class);
         var conta = new br.wm.banco.academico.Model.Usuario.UsuarioModel();
@@ -140,10 +169,7 @@ class UploadSegurancaTests {
             org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class), org.mockito.Mockito.mock(LimpezaArquivoService.class),
             storage, validacao, org.mockito.Mockito.mock(AntimalwareService.class), new LimiteUploadService(2, 20, 104857600), 1);
         var dto = UploadFixtures.dados("Título", "Descrição", java.util.UUID.randomUUID(), br.wm.banco.academico.Enum.TipoPublicacao.RESUMO, null);
-        dto.setResponsabilidadeConfirmada(false);
-        assertEquals(400, assertThrows(ResponseStatusException.class,
-            () -> service.criar(dto, arquivo("a.pdf", "application/pdf", UploadFixtures.pdf()), "autor")).getStatusCode().value());
-        dto.setResponsabilidadeConfirmada(true);
+        dto.setResponsabilidadeConfirmada(null);
         assertEquals(413, assertThrows(ResponseStatusException.class,
             () -> service.criar(dto, arquivo("a.pdf", "application/pdf", UploadFixtures.pdf()), "autor")).getStatusCode().value());
         org.mockito.Mockito.verify(repo, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());

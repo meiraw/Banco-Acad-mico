@@ -1,5 +1,5 @@
-import { FileText, Presentation, ImageIcon, FileQuestion, Eye, Heart, Trash2 } from 'lucide-react'
-import { categoria, tamanho, rotuloSemestre } from '../lib/api.js'
+import { Heart, ThumbsUp, ThumbsDown, Trash2 } from 'lucide-react'
+import { api, categoria, rotuloSemestre } from '../lib/api.js'
 import { corSemestre } from '../lib/academico.js'
 import { useFavoritos } from '../lib/useFavoritos.js'
 import { PreviaArquivo } from './PreviaArquivo.jsx'
@@ -9,17 +9,18 @@ import { StatusModeracao } from './StatusModeracao.jsx'
 import { rotuloTipoPublicacao } from '../lib/tipoPublicacao.js'
 import { useState } from 'react'
 
-const ICONES = { PDF: FileText, Slides: Presentation, Imagem: ImageIcon, Outro: FileQuestion }
-
 export function MaterialCard({ material, disciplina, semestreIndice, semestre, cursos = [], onExcluir }) {
   const cat = categoria(material.tipoArquivo)
-  const Icone = ICONES[cat]
   const { isFavorito, alternar, disponivel, pendente, erro, recarregar } = useFavoritos()
   const [erroFavorito, setErroFavorito] = useState('')
+  const [contagemAtualizada, setContagemAtualizada] = useState(null)
+  const totais = contagemAtualizada?.material === material ? contagemAtualizada.dados : material
   const favorito = isFavorito(material.id)
   async function favoritar() {
     setErroFavorito('')
-    try { await alternar(material.id) } catch (error) { setErroFavorito(error.message) }
+    try { await alternar(material.id) } catch (error) { setErroFavorito(error.message); return }
+    try { setContagemAtualizada({ material, dados: await api.material(material.id) }) }
+    catch { setErroFavorito('Favorito atualizado. Recarregue a página para atualizar os totais.') }
   }
 
   return (
@@ -73,20 +74,23 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
         <p className="line-clamp-2 text-sm text-muted-foreground">{material.descricao}</p>
         <p className="text-sm text-muted-foreground">Tipo de Publicação: {rotuloTipoPublicacao(material.tipoPublicacao)}</p>
 
-        <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
-          <span className="label-mono flex items-center gap-1.5 text-muted-foreground">
-            <Icone className="size-4" /> {cat} · {tamanho(material.tamanhoArquivo)}
-          </span>
-          <div className="flex items-center gap-3">
-            <Link to={`/material/${material.id}`} className="label-mono flex items-center gap-1 text-secondary transition-opacity hover:opacity-80">
-              <Eye className="size-4" /> Ver publicação
-            </Link>
-            {onExcluir && (
-              <button type="button" onClick={() => onExcluir(material)} className="label-mono flex items-center gap-1 text-destructive transition-opacity hover:opacity-80">
-                <Trash2 className="size-4" /> Excluir
-              </button>
-            )}
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+          <div role="group" aria-label="Totais da publicação" className="flex items-center gap-4 text-sm text-muted-foreground tabular-nums">
+            <span className="inline-flex items-center gap-1.5" title="Curtidas" aria-label={`${totais.totalCurtidas ?? '—'} curtidas`}>
+              <ThumbsUp className="size-4" aria-hidden="true" /> {totais.totalCurtidas ?? '—'}
+            </span>
+            <span className="inline-flex items-center gap-1.5" title="Descurtidas" aria-label={`${totais.totalDeslikes ?? '—'} descurtidas`}>
+              <ThumbsDown className="size-4" aria-hidden="true" /> {totais.totalDeslikes ?? '—'}
+            </span>
+            <span className="inline-flex items-center gap-1.5" title="Favoritos" aria-label={`${totais.totalFavoritos ?? '—'} favoritos`}>
+              <Heart className="size-4" aria-hidden="true" /> {totais.totalFavoritos ?? '—'}
+            </span>
           </div>
+          {onExcluir && (
+            <button type="button" onClick={() => onExcluir(material)} className="label-mono flex items-center gap-1 text-destructive transition-opacity hover:opacity-80">
+              <Trash2 className="size-4" /> Excluir
+            </button>
+          )}
         </div>
         {(erroFavorito || erro) && <p role="alert" className="text-sm text-destructive">{erroFavorito || erro} <button type="button" className="underline" onClick={() => { setErroFavorito(''); void recarregar() }}>Tentar novamente</button></p>}
       </div>

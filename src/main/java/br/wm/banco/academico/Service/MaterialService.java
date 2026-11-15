@@ -63,8 +63,6 @@ public class MaterialService {
     @Transactional
     public MaterialModel criar (MaterialRequestDTO dto , MultipartFile arquivo, String email) {
         validarPublicacao(dto);
-        if (!Boolean.TRUE.equals(dto.getResponsabilidadeConfirmada()))
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Confirme sua responsabilidade pelo conteúdo enviado.");
         try (var permissao = limites.adquirir(email, arquivo.getSize())) {
             return criarValidado(dto, arquivo, email);
         }
@@ -97,7 +95,7 @@ public class MaterialService {
         material.setNomeArquivo(nomeArquivo); //Depois  , aqui temos o getOriginalFilename , para os nomes do arquivos
         //Pega informações do arquivo
         material.setTipoArquivo(validado.mimeDetectado());
-        material.setCaminhoArquivo(caminhoArquivo.toString());
+        material.setCaminhoArquivo(armazenamento.referencia(caminhoArquivo));
         material.setTamanhoArquivo((long) validado.conteudo().length);
 
         material.setDisciplina(disciplina); // esse é o set de disciplinas

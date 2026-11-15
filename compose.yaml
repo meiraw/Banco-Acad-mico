@@ -1,6 +1,21 @@
 name: banco-academico
 
+# Aplicar ao serviço backend quando ele for incluído na etapa de deploy.
+x-armazenamento-backend:
+  environment:
+    UPLOAD_ROOT: /data/uploads
+    UPLOAD_LEGACY_ROOTS: ${UPLOAD_LEGACY_ROOTS:-}
+  volumes:
+    - arquivos-academicos:/data/uploads
+
 services:
+  arquivos:
+    image: postgres:17
+    profiles: [manutencao]
+    network_mode: none
+    entrypoint: [/bin/sh]
+    volumes:
+      - arquivos-academicos:/data/uploads
   clamav:
     image: clamav/clamav:stable
     profiles: [antimalware]
@@ -20,5 +35,6 @@ services:
       - dados-academicos:/var/lib/postgresql/data
 
 volumes:
+  arquivos-academicos:
   assinaturas-antimalware:
   dados-academicos:

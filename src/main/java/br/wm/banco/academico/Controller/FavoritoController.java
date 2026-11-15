@@ -13,12 +13,16 @@ import java.util.UUID;
 @RequestMapping("/favoritos")
 public class FavoritoController {
     private final FavoritoService favoritos;
-    public FavoritoController(FavoritoService favoritos) { this.favoritos = favoritos; }
+    private final br.wm.banco.academico.Service.EstatisticasMaterialService estatisticas;
+    public FavoritoController(FavoritoService favoritos, br.wm.banco.academico.Service.EstatisticasMaterialService estatisticas) {
+        this.favoritos = favoritos; this.estatisticas = estatisticas;
+    }
     @GetMapping
     public ResponseEntity<Page<MaterialResponseDTO>> listar(Principal principal,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "12") int size) {
-        return ResponseEntity.ok().header("Cache-Control", "private, no-store")
-            .body(favoritos.listar(principal.getName(), page, size));
+        var resposta = favoritos.listar(principal.getName(), page, size);
+        estatisticas.preencher(resposta.getContent());
+        return ResponseEntity.ok().header("Cache-Control", "private, no-store").body(resposta);
     }
     @GetMapping("/ids")
     public ResponseEntity<Page<UUID>> ids(Principal principal,

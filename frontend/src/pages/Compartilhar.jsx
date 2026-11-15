@@ -21,7 +21,6 @@ export function Compartilhar() {
   const [arquivo, setArquivo] = useState(null)
   const [referencia, setReferencia] = useState('')
   const [tipoPublicacao, setTipoPublicacao] = useState('')
-  const [autoral, setAutoral] = useState(false)
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
 
@@ -48,11 +47,10 @@ export function Compartilhar() {
     if (!/\.(pdf|doc|docx|ppt|pptx|jpe?g|png|gif)$/i.test(arquivo.name)) { setErro('Use PDF, DOC, DOCX, PPT, PPTX, JPG, PNG ou GIF.'); return }
     if (arquivo.size > 20 * 1024 * 1024) { setErro('O arquivo deve ter até 20 MB.'); return }
     if (!TIPOS_PUBLICACAO.some(([valor]) => valor === tipoPublicacao)) { setErro('Selecione o tipo de publicação.'); return }
-    if (!autoral) { setErro('Confirme que você é responsável pelo conteúdo enviado.'); return }
 
     setEnviando(true)
     try {
-      const material = await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId, responsabilidadeConfirmada: autoral, ...dadosPublicacao(tipoPublicacao, referencia) }, arquivo)
+      const material = await api.criarMaterial({ titulo: titulo.trim(), descricao: descricao.trim(), disciplinaId, ...dadosPublicacao(tipoPublicacao, referencia) }, arquivo)
       navigate(perfil?.perfil === 'ADMIN' ? '/perfil' : '/minhas-publicacoes', { replace: true, state: { materialEnviado: material.id } })
     } catch (err) { setErro(err.message); setEnviando(false) }
   }
@@ -125,22 +123,17 @@ export function Compartilhar() {
               <span className="label-mono text-muted-foreground">{arquivo ? arquivo.name : 'Clique para selecionar o arquivo'}</span>
             </label>
             <input id="arquivo" type="file" className="sr-only" accept=".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png,.gif" onChange={e => setArquivo(e.target.files?.[0] ?? null)} />
-            <p className="text-sm text-muted-foreground">PDF, DOC, DOCX, PPT, PPTX, JPG, PNG ou GIF. Sem senha, macros ou objetos incorporados.</p>
+            <p className="text-sm text-muted-foreground">PDF, DOC, DOCX, PPT, PPTX, JPG ou PNG.</p>
           </div>
 
           <div className="space-y-3 rounded-lg border-2 border-tertiary/50 bg-tertiary/10 p-4">
             <div className="flex items-start gap-2">
               <ShieldAlert className="mt-0.5 size-5 shrink-0 text-tertiary" />
               <p className="text-sm">
-                <strong>Direitos autorais e dados pessoais:</strong> informar uma referência bibliográfica não concede autorização para compartilhar um livro. A classificação como Slide, Resumo ou Anotação não elimina possíveis direitos autorais de terceiros. Antes de enviar provas ou trabalhos, rasure CPF, telefone, matrícula e notas pessoais.
+                <strong>Publicação e moderação:</strong> revise as informações e o arquivo antes de enviar. O conteúdo será analisado pela moderação e ficará disponível para os demais usuários após a aprovação. Você pode acompanhar o status em Minhas publicações.
               </p>
             </div>
           </div>
-
-          <label className="label-mono flex items-start gap-2">
-            <input type="checkbox" checked={autoral} onChange={e => setAutoral(e.target.checked)} className="mt-0.5 size-4 accent-primary" />
-            Sou responsável pelo conteúdo enviado e informo que ele não viola direitos de terceiros (Marco Civil da Internet).
-          </label>
 
           {erro && <p className="text-sm text-destructive" role="alert">{erro}</p>}
 

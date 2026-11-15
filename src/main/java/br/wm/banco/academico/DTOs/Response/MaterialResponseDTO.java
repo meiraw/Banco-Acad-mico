@@ -7,6 +7,13 @@ import java.util.UUID;
 import java.time.Instant;
 
 public class MaterialResponseDTO {
+    private long totalCurtidas, totalDeslikes, totalFavoritos;
+    public long getTotalCurtidas() { return totalCurtidas; }
+    public long getTotalDeslikes() { return totalDeslikes; }
+    public long getTotalFavoritos() { return totalFavoritos; }
+    public void definirTotais(long curtidas, long deslikes, long favoritos) {
+        totalCurtidas = curtidas; totalDeslikes = deslikes; totalFavoritos = favoritos;
+    }
     private final boolean arquivoValidado;
     public boolean isArquivoValidado() { return arquivoValidado; }
     private br.wm.banco.academico.Enum.TipoPublicacao tipoPublicacao;

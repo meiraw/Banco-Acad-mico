@@ -49,6 +49,7 @@ class ModeracaoTests {
     @Autowired MaterialService service;
     @Autowired br.wm.banco.academico.Service.LimpezaArquivoService limpeza;
     @Autowired TokenService tokens;
+    @Autowired br.wm.banco.academico.Service.ArmazenamentoService armazenamento;
     @Autowired PlatformTransactionManager transactions;
     @MockitoBean JavaMailSender mail;
     MockMvc mvc;
@@ -80,7 +81,7 @@ class ModeracaoTests {
         return enviar("RESUMO", null);
     }
     MockMultipartFile dadosPublicacao(String tipo, String referencia) {
-        String extras = ",\"responsabilidadeConfirmada\":true" + (tipo == null ? "" : ",\"tipoPublicacao\":\"" + tipo + "\"")
+        String extras = (tipo == null ? "" : ",\"tipoPublicacao\":\"" + tipo + "\"")
                 + (referencia == null ? "" : ",\"referenciaBibliografica\":\"" + referencia + "\"");
         return new MockMultipartFile("dados", "", "application/json",
             ("{\"titulo\":\"Resumo de teste\",\"descricao\":\"Descrição do material\",\"disciplinaId\":\"" + disciplina + "\"" + extras + "}").getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -92,7 +93,7 @@ class ModeracaoTests {
                 .header("Authorization", bearer(autor)))
             .andExpect(status().isCreated()).andExpect(jsonPath("statusModeracao").value("PENDENTE"));
         var m = materiais.findByAutorEmailOrderByPublicadoEmDescIdDesc(autor.getEmail(), org.springframework.data.domain.PageRequest.of(0, 12)).getContent().getFirst();
-        arquivos.add(Path.of(m.getCaminhoArquivo()));
+        arquivos.add(armazenamento.permitido(m.getCaminhoArquivo()));
         return m.getId();
     }
 
@@ -101,6 +102,30 @@ class ModeracaoTests {
         for (Path arquivo : arquivos) Files.deleteIfExists(arquivo);
     }
 
+    @Test void totaisDeInteracoesSaoPorMaterialEIncluidosNasListagens() throws Exception {
+        UUID id = enviar(), vazio = enviar();
+        jdbc.update("UPDATE materiais SET status_moderacao = 'APROVADO' WHERE id IN (?, ?)", id, vazio);
+        jdbc.update("INSERT INTO curtidas_material(material_id,usuario_id,tipo) VALUES (?,?,'CURTIDA')", id, autor.getId());
+        jdbc.update("INSERT INTO curtidas_material(material_id,usuario_id,tipo) VALUES (?,?,'DESLIKE')", id, colega.getId());
+        jdbc.update("INSERT INTO favoritos(usuario_id,material_id) VALUES (?,?)", autor.getId(), id);
+        jdbc.update("INSERT INTO favoritos(usuario_id,material_id) VALUES (?,?)", colega.getId(), id);
+        mvc.perform(get("/material/" + id)).andExpect(status().isOk())
+            .andExpect(jsonPath("totalCurtidas").value(1)).andExpect(jsonPath("totalDeslikes").value(1))
+            .andExpect(jsonPath("totalFavoritos").value(2));
+        mvc.perform(get("/material/" + vazio)).andExpect(status().isOk())
+            .andExpect(jsonPath("totalCurtidas").value(0)).andExpect(jsonPath("totalDeslikes").value(0))
+            .andExpect(jsonPath("totalFavoritos").value(0));
+        for (String caminho : List.of("/material?size=500", "/favoritos", "/perfil/publicacoes")) {
+            mvc.perform(get(caminho).header("Authorization", bearer(autor))).andExpect(status().isOk())
+                .andExpect(jsonPath("content[?(@.id == '" + id + "')].totalCurtidas").value(org.hamcrest.Matchers.contains(1)))
+                .andExpect(jsonPath("content[?(@.id == '" + id + "')].totalDeslikes").value(org.hamcrest.Matchers.contains(1)))
+                .andExpect(jsonPath("content[?(@.id == '" + id + "')].totalFavoritos").value(org.hamcrest.Matchers.contains(2)));
+        }
+        jdbc.update("DELETE FROM favoritos WHERE usuario_id = ? AND material_id = ?", colega.getId(), id);
+        jdbc.update("UPDATE curtidas_material SET tipo = 'CURTIDA' WHERE usuario_id = ? AND material_id = ?", colega.getId(), id);
+        mvc.perform(get("/material/" + id)).andExpect(jsonPath("totalCurtidas").value(2))
+            .andExpect(jsonPath("totalDeslikes").value(0)).andExpect(jsonPath("totalFavoritos").value(1));
+    }
     @Test void envioPendenteOcultoComEmailUnicoEArquivoRestrito() throws Exception {
         UUID id = enviar();
         assertEquals(StatusModeracao.PENDENTE, materiais.findById(id).orElseThrow().getStatusModeracao());
@@ -150,7 +175,7 @@ class ModeracaoTests {
             .andExpect(status().isOk()).andExpect(jsonPath("statusModeracao").value("REJEITADO"));
         var material = materiais.findById(id).orElseThrow();
         assertNotNull(material.getDecisaoEm()); assertEquals(admin.getId(), material.getModerador().getId());
-        assertTrue(Files.exists(Path.of(material.getCaminhoArquivo())));
+        assertTrue(Files.exists(armazenamento.permitido(material.getCaminhoArquivo())));
         mvc.perform(get("/material/" + id + "/arquivo").header("Authorization", bearer(colega))).andExpect(status().isNotFound());
         mvc.perform(get("/material?size=500")).andExpect(jsonPath("content[?(@.id == '" + id + "')]").isEmpty());
         mvc.perform(get("/perfil/publicacoes").header("Authorization", bearer(autor)))
@@ -187,7 +212,7 @@ class ModeracaoTests {
         assertThrows(IllegalStateException.class, () -> new TransactionTemplate(transactions).execute(status -> {
             var m = service.criar(UploadFixtures.dados("Rollback", "Descrição", disciplina, br.wm.banco.academico.Enum.TipoPublicacao.RESUMO, null),
                 new MockMultipartFile("arquivo", "teste.pdf", "application/pdf", UploadFixtures.pdf()), autor.getEmail());
-            caminho.set(Path.of(m.getCaminhoArquivo())); id.set(m.getId());
+            caminho.set(armazenamento.permitido(m.getCaminhoArquivo())); id.set(m.getId());
             verifyNoInteractions(mail);
             throw new IllegalStateException("Reverter teste");
         }));
@@ -255,15 +280,10 @@ class ModeracaoTests {
         mvc.perform(get("/material/" + id + "/arquivo")).andExpect(status().isOk());
     }
 
-    @Test void rejeitaArquivoDisfarcadoESemResponsabilidadeSemCriarPublicacao() throws Exception {
+    @Test void rejeitaArquivoDisfarcadoOuAusenteSemCriarPublicacao() throws Exception {
         long antes = materiais.count();
         mvc.perform(multipart("/material").file(dadosPublicacao("RESUMO", null))
             .file(new MockMultipartFile("arquivo", "falso.pdf", "application/pdf", "<html>inválido</html>".getBytes()))
-            .header("Authorization", bearer(autor))).andExpect(status().isBadRequest());
-        var semConfirmacao = new MockMultipartFile("dados", "", "application/json",
-            ("{\"titulo\":\"Resumo\",\"descricao\":\"Descrição\",\"disciplinaId\":\"" + disciplina + "\",\"tipoPublicacao\":\"RESUMO\"}").getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        mvc.perform(multipart("/material").file(semConfirmacao)
-            .file(new MockMultipartFile("arquivo", "a.pdf", "application/pdf", UploadFixtures.pdf()))
             .header("Authorization", bearer(autor))).andExpect(status().isBadRequest());
         mvc.perform(multipart("/material").file(dadosPublicacao("RESUMO", null))
             .header("Authorization", bearer(autor))).andExpect(status().isBadRequest())
@@ -332,7 +352,7 @@ class ModeracaoTests {
         for (var status : StatusModeracao.values()) {
             UUID id = enviar();
             jdbc.update("UPDATE materiais SET status_moderacao = ? WHERE id = ?", status.name(), id);
-            Path arquivo = Path.of(materiais.findById(id).orElseThrow().getCaminhoArquivo());
+            Path arquivo = armazenamento.permitido(materiais.findById(id).orElseThrow().getCaminhoArquivo());
             UUID comentario = UUID.randomUUID();
             var agora = java.sql.Timestamp.from(java.time.Instant.now());
             jdbc.update("INSERT INTO comentarios_material(id,material_id,usuario_id,texto,criado_em) VALUES (?,?,?,?,?)", comentario, id, colega.getId(), "Comentário", agora);
@@ -353,7 +373,7 @@ class ModeracaoTests {
     }
 
     @Test void adminExcluiMaterialSemAutorMesmoSeArquivoJaNaoExiste() throws Exception {
-        UUID id = enviar(); var arquivo = Path.of(materiais.findById(id).orElseThrow().getCaminhoArquivo());
+        UUID id = enviar(); var arquivo = armazenamento.permitido(materiais.findById(id).orElseThrow().getCaminhoArquivo());
         jdbc.update("UPDATE materiais SET autor_id = NULL WHERE id = ?", id);
         Files.delete(arquivo);
         mvc.perform(delete("/material/" + id).header("Authorization", bearer(admin))).andExpect(status().isNoContent());
@@ -361,7 +381,7 @@ class ModeracaoTests {
     }
 
     @Test void rollbackDaExclusaoPreservaPublicacaoEArquivo() throws Exception {
-        UUID id = enviar(); Path arquivo = Path.of(materiais.findById(id).orElseThrow().getCaminhoArquivo());
+        UUID id = enviar(); Path arquivo = armazenamento.permitido(materiais.findById(id).orElseThrow().getCaminhoArquivo());
         autenticar(autor);
         assertThrows(IllegalStateException.class, () -> new TransactionTemplate(transactions).execute(status -> {
             service.excluir(id);
@@ -373,7 +393,7 @@ class ModeracaoTests {
     }
 
     @Test void falhaNoDiscoFicaNaFilaEPermiteNovaTentativa() throws Exception {
-        UUID id = enviar(); Path arquivo = Path.of(materiais.findById(id).orElseThrow().getCaminhoArquivo());
+        UUID id = enviar(); Path arquivo = armazenamento.permitido(materiais.findById(id).orElseThrow().getCaminhoArquivo());
         Files.delete(arquivo); Files.createDirectory(arquivo);
         Path bloqueio = Files.writeString(arquivo.resolve("bloqueio-teste"), "teste");
         try {
@@ -389,7 +409,7 @@ class ModeracaoTests {
 
     @Test void naoRemoveArquivoForaDoArmazenamento() throws Exception {
         UUID id = enviar();
-        jdbc.update("UPDATE materiais SET caminho_arquivo = 'pom.xml' WHERE id = ?", id);
+        jdbc.update("UPDATE materiais SET caminho_arquivo = '../pom.xml' WHERE id = ?", id);
         mvc.perform(delete("/material/" + id).header("Authorization", bearer(autor))).andExpect(status().isNotFound());
         assertTrue(Files.exists(Path.of("pom.xml"))); assertTrue(materiais.existsById(id));
     }

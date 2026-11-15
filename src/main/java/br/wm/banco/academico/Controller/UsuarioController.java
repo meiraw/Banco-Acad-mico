@@ -5,6 +5,8 @@ import br.wm.banco.academico.DTOs.Request.CadastroUsuarioRequestDTO;
 import br.wm.banco.academico.DTOs.Response.UsuarioResponseDTO;
 import br.wm.banco.academico.Model.Usuario.UsuarioModel;
 import br.wm.banco.academico.Service.UsuarioService;
+import br.wm.banco.academico.Service.RecuperacaoLimiteService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,13 +20,22 @@ import java.util.UUID;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final RecuperacaoLimiteService limites;
 
-    public UsuarioController (UsuarioService usuarioService){
+    public UsuarioController (UsuarioService usuarioService, RecuperacaoLimiteService limites){
         this.usuarioService = usuarioService;
+        this.limites = limites;
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioResponseDTO> criar (@Valid @RequestBody CadastroUsuarioRequestDTO dto ){
+    public ResponseEntity<UsuarioResponseDTO> criar (@Valid @RequestBody CadastroUsuarioRequestDTO dto, HttpServletRequest request){
+        String email = dto.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
+        if (!limites.permitir("cadastro-ip:" + request.getRemoteAddr(), 10)
+                || !limites.permitir("cadastro-email:" + email, 3)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.TOO_MANY_REQUESTS,
+                    "Muitas tentativas de cadastro. Aguarde até 15 minutos.");
+        }
         UsuarioModel usuario = usuarioService.criar(dto);
         return ResponseEntity.status(201).body(new UsuarioResponseDTO (usuario));
     }

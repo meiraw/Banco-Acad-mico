@@ -1,0 +1,25 @@
+# Apenas restauração de teste, sem portas públicas ou volumes de produção.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: academicos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${RESTORE_POSTGRES_PASSWORD:?Defina uma senha exclusiva para o teste}
+    volumes:
+      - dados-academicos:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d academicos']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  arquivos:
+    image: postgres:17
+    profiles: [manutencao]
+    network_mode: none
+    entrypoint: [/bin/sh]
+    volumes:
+      - arquivos-academicos:/data/uploads
+volumes:
+  dados-academicos:
+  arquivos-academicos:

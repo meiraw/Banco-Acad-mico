@@ -48,6 +48,9 @@ class AuthenticationTests {
             br.wm.banco.academico.Controller.RecuperacaoSenhaController.class,
             br.wm.banco.academico.Controller.MaterialController.class})
     static class Config {
+        @Bean br.wm.banco.academico.Service.EstatisticasMaterialService estatisticas() {
+            return mock(br.wm.banco.academico.Service.EstatisticasMaterialService.class);
+        }
         @Bean br.wm.banco.academico.Service.ConfirmacaoEmailService confirmacao() {
             return mock(br.wm.banco.academico.Service.ConfirmacaoEmailService.class);
         }
@@ -77,12 +80,67 @@ class AuthenticationTests {
         reset(usuarios);
         reset(context.getBean(br.wm.banco.academico.Service.ConfirmacaoEmailService.class));
         reset(context.getBean(br.wm.banco.academico.Service.RecuperacaoLimiteService.class));
+        when(context.getBean(br.wm.banco.academico.Service.RecuperacaoLimiteService.class)
+                .permitir(anyString(), anyInt())).thenReturn(true);
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         usuario = new UsuarioModel();
         usuario.setEmailConfirmado(true);
         usuario.setNome("Teste"); usuario.setEmail("teste@unemat.br");
         usuario.setSenha(encoder.encode("Senha123!")); usuario.setPerfil(PerfilUsuario.USER);
         when(usuarios.findByEmail(usuario.getEmail())).thenReturn(Optional.of(usuario));
+    }
+    private void contarTentativas() {
+        var contadores = new java.util.HashMap<String, Integer>();
+        when(context.getBean(br.wm.banco.academico.Service.RecuperacaoLimiteService.class)
+                .permitir(anyString(), anyInt())).thenAnswer(i ->
+                    contadores.merge(i.getArgument(0), 1, Integer::sum) <= (int) i.getArgument(1));
+    }
+    @Test void loginLimitaEmailNormalizadoMesmoComIpsDiferentes() throws Exception {
+        contarTentativas();
+        for (int i = 0; i < 21; i++) {
+            int tentativa = i;
+            mvc.perform(post("/auth/login").with(r -> { r.setRemoteAddr("198.51.100." + tentativa); return r; })
+                    .contentType("application/json")
+                    .content("{\"email\":\"" + (i % 2 == 0 ? "ausente@example.test" : "AUSENTE@example.test")
+                            + "\",\"senha\":\"Errada123!\"}"))
+                .andExpect(i < 20 ? status().isConflict() : status().isTooManyRequests());
+        }
+        verify(usuarios, times(20)).findByEmail("ausente@example.test");
+    }
+    @Test void loginLimitaIpMesmoTrocandoEmailSemConfiarEmForwardedFor() throws Exception {
+        contarTentativas();
+        for (int i = 0; i < 101; i++) {
+            mvc.perform(post("/auth/login").header("X-Forwarded-For", "198.51.100." + i)
+                    .contentType("application/json")
+                    .content("{\"email\":\"ausente" + i + "@example.test\",\"senha\":\"Errada123!\"}"))
+                .andExpect(i < 100 ? status().isConflict() : status().isTooManyRequests());
+        }
+        verify(usuarios, times(100)).findByEmail(anyString());
+    }
+    @Test void cadastroLimitaEmailNormalizadoMesmoComIpsDiferentes() throws Exception {
+        contarTentativas();
+        for (int i = 0; i < 4; i++) {
+            int tentativa = i;
+            mvc.perform(post("/usuario").with(r -> { r.setRemoteAddr("198.51.100." + tentativa); return r; })
+                    .contentType("application/json")
+                    .content("{\"nome\":\"Teste\",\"email\":\"" + (i % 2 == 0 ? "teste@unemat.br" : "TESTE@UNEMAT.BR")
+                            + "\",\"senha\":\"Senha123!\",\"semestreAtual\":1}"))
+                .andExpect(i < 3 ? status().isConflict() : status().isTooManyRequests());
+        }
+        verify(usuarios, times(3)).findByEmail("teste@unemat.br");
+        verify(usuarios, never()).saveAndFlush(any());
+    }
+    @Test void cadastroLimitaIpMesmoTrocandoEmail() throws Exception {
+        contarTentativas();
+        when(usuarios.findByEmail(anyString())).thenReturn(Optional.of(usuario));
+        for (int i = 0; i < 11; i++) {
+            mvc.perform(post("/usuario").contentType("application/json")
+                    .content("{\"nome\":\"Teste\",\"email\":\"teste" + i
+                            + "@example.test\",\"senha\":\"Senha123!\",\"semestreAtual\":1}"))
+                .andExpect(i < 10 ? status().isConflict() : status().isTooManyRequests());
+        }
+        verify(usuarios, times(10)).findByEmail(anyString());
+        verify(usuarios, never()).saveAndFlush(any());
     }
     @Test void cadastroPreservaBcryptEPerfilUser() throws Exception {
         when(usuarios.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -149,6 +207,7 @@ class AuthenticationTests {
         java.util.UUID id = java.util.UUID.randomUUID();
         usuario.setPerfil(PerfilUsuario.ADMIN);
         when(usuarios.findById(id)).thenReturn(Optional.of(usuario));
+        when(usuarios.bloquearPorId(id)).thenReturn(Optional.of(usuario));
         when(usuarios.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
         mvc.perform(put("/usuario/" + id).header("Authorization", "Bearer " + tokens.gerarToken(usuario))
                 .contentType("application/json")
