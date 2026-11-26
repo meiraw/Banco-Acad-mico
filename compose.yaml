@@ -1,14 +1,75 @@
 name: banco-academico
 
-# Aplicar ao serviço backend quando ele for incluído na etapa de deploy.
-x-armazenamento-backend:
-  environment:
-    UPLOAD_ROOT: /data/uploads
-    UPLOAD_LEGACY_ROOTS: ${UPLOAD_LEGACY_ROOTS:-}
-  volumes:
-    - arquivos-academicos:/data/uploads
-
 services:
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-8081}:80"
+    networks:
+      entrada:
+      proxy:
+        ipv4_address: ${PROXY_ADDRESS:-172.30.83.10}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/_health]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    restart: unless-stopped
+    command:
+      - --server.forward-headers-strategy=native
+      - "--server.tomcat.remoteip.internal-proxies=${PROXY_ADDRESS:-172.30.83.10}/32"
+      - --management.endpoint.health.show-details=never
+      - --management.health.mail.enabled=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [proxy, dados, saida]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/academicos
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Defina a senha no .env}
+      JWT_SECRET: ${JWT_SECRET:-}
+      MODERATION_ADMIN_EMAIL: ${MODERATION_ADMIN_EMAIL:-}
+      CORS_ALLOWED_ORIGINS: ${DOCKER_PUBLIC_ORIGIN:-http://localhost:8081}
+      PASSWORD_RESET_URL: ${DOCKER_PUBLIC_ORIGIN:-http://localhost:8081}/redefinir-senha
+      EMAIL_CONFIRMATION_URL: ${DOCKER_PUBLIC_ORIGIN:-http://localhost:8081}/confirmar-email
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-smtp}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-onboarding@resend.dev}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-nao-responda@localhost}
+      SMTP_AUTH: ${SMTP_AUTH:-true}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+      UPLOAD_ROOT: /data/uploads
+      UPLOAD_LEGACY_ROOTS: ${UPLOAD_LEGACY_ROOTS:-}
+      UPLOAD_USER_QUOTA_BYTES: ${UPLOAD_USER_QUOTA_BYTES:-524288000}
+      UPLOAD_DISK_RESERVE_BYTES: ${UPLOAD_DISK_RESERVE_BYTES:-104857600}
+      UPLOAD_CONCURRENCY: ${UPLOAD_CONCURRENCY:-2}
+      UPLOAD_ATTEMPTS_15MIN: ${UPLOAD_ATTEMPTS_15MIN:-20}
+      UPLOAD_BYTES_15MIN: ${UPLOAD_BYTES_15MIN:-104857600}
+      UPLOAD_ANTIMALWARE_ENABLED: ${UPLOAD_ANTIMALWARE_ENABLED:-false}
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      CLAMAV_TIMEOUT_MS: ${CLAMAV_TIMEOUT_MS:-15000}
+    volumes:
+      - arquivos-academicos:/data/uploads
+    healthcheck:
+      test: [CMD, curl, -fsS, -o, /dev/null, http://127.0.0.1:8080/actuator/health]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 45s
+
   arquivos:
     image: postgres:17
     profiles: [manutencao]
@@ -19,20 +80,48 @@ services:
   clamav:
     image: clamav/clamav:stable
     profiles: [antimalware]
+    restart: unless-stopped
+    networks: [dados, atualizacoes]
     ports:
       - "127.0.0.1:3310:3310"
     volumes:
       - assinaturas-antimalware:/var/lib/clamav
+    healthcheck:
+      test: [CMD, clamdscan, --ping=1]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
   postgres:
     image: postgres:17
+    restart: unless-stopped
+    networks: [dados, banco-local]
     environment:
       POSTGRES_DB: academicos
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina a senha no .env}
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - dados-academicos:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+networks:
+  entrada:
+  proxy:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${PROXY_SUBNET:-172.30.83.0/24}
+  dados:
+    internal: true
+  banco-local:
+  saida:
+  atualizacoes:
 
 volumes:
   arquivos-academicos:

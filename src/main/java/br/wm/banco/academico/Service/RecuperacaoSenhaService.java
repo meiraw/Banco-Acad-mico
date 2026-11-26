@@ -39,7 +39,7 @@ public class RecuperacaoSenhaService {
   try {
    envio.executeWithoutResult(status -> solicitarNaTransacao(endereco));
   } catch (MailException ex) {
-   org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha SMTP na recuperação: categoria={}. Estado anterior preservado.", DiagnosticoEmail.categoria(ex));
+   org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha no envio de e-mail na recuperação: categoria={}. Estado anterior preservado.", DiagnosticoEmail.categoria(ex));
   }
  }
  private void solicitarNaTransacao(String endereco) {

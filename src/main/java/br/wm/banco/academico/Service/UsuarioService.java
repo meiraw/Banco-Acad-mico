@@ -13,11 +13,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
 
 public class UsuarioService {
+    private static final String VERSAO_ATUAL_TERMOS = "1";
 
     private final UsuarioRepository usuarioRepository;
     private final ConfirmacaoEmailService confirmacao;
@@ -33,6 +35,10 @@ public class UsuarioService {
     @org.springframework.transaction.annotation.Transactional
     public UsuarioModel criar (CadastroUsuarioRequestDTO dto ){
 
+        if (!VERSAO_ATUAL_TERMOS.equals(dto.getVersaoTermosAceita())) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Aceite os Termos de Uso vigentes para continuar.");
+        }
         if (dto.getSemestreAtual() == null || dto.getSemestreAtual() < 1 || dto.getSemestreAtual() > 8) {
             throw new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.BAD_REQUEST, "Selecione um semestre entre 1 e 8.");
@@ -53,6 +59,8 @@ public class UsuarioService {
         usuario.setNome(dto.getNome().trim());
         usuario.setEmail(dto.getEmail());
         usuario.setSemestreAtual(dto.getSemestreAtual());
+        usuario.setVersaoTermosAceita(VERSAO_ATUAL_TERMOS);
+        usuario.setTermosAceitosEm(Instant.now());
 
 
         String senhaCriptografada = passwordEncoder.encode(dto.getSenha());

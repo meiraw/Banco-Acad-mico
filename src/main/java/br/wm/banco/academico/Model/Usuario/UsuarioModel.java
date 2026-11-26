@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -22,6 +23,14 @@ public class UsuarioModel {
     @Setter
     @Column(name = "semestre_atual")
     private Integer semestreAtual;
+
+    @Setter
+    @Column(name = "versao_termos_aceita", length = 32)
+    private String versaoTermosAceita;
+
+    @Setter
+    @Column(name = "termos_aceitos_em")
+    private Instant termosAceitosEm;
 
     @Setter
     @Column(name = "email_confirmado", nullable = false)

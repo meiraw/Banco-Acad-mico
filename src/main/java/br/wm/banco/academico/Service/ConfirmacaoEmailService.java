@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -25,16 +23,14 @@ import java.util.UUID;
 public class ConfirmacaoEmailService {
     private final UsuarioRepository usuarios;
     private final JdbcTemplate jdbc;
-    private final JavaMailSender mail;
-    private final String remetente, url;
+    private final TransporteEmail mail;
+    private final String url;
     private final SecureRandom random = new SecureRandom();
     private final TransactionTemplate envio;
 
-    public ConfirmacaoEmailService(UsuarioRepository usuarios, JdbcTemplate jdbc, JavaMailSender mail,
-            @Value("${app.recuperacao.remetente}") String remetente,
+    public ConfirmacaoEmailService(UsuarioRepository usuarios, JdbcTemplate jdbc, TransporteEmail mail,
             @Value("${app.confirmacao.url}") String url, PlatformTransactionManager transactions) {
         this.usuarios = usuarios; this.jdbc = jdbc; this.mail = mail;
-        this.remetente = remetente;
         URI uri = URI.create(url);
         if (!("https".equals(uri.getScheme()) || "http".equals(uri.getScheme()))
                 || uri.getHost() == null || uri.getRawFragment() != null || uri.getRawQuery() != null)
@@ -53,7 +49,7 @@ public class ConfirmacaoEmailService {
         try {
             envio.executeWithoutResult(status -> solicitarNaTransacao(endereco));
         } catch (MailException ex) {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha SMTP na confirmação: categoria={}. Estado anterior preservado.", DiagnosticoEmail.categoria(ex));
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Falha no envio de e-mail na confirmação: categoria={}. Estado anterior preservado.", DiagnosticoEmail.categoria(ex));
         }
     }
 
@@ -68,12 +64,9 @@ public class ConfirmacaoEmailService {
             jdbc.update("INSERT INTO confirmacoes_email VALUES (?, ?, ?)",
                     RecuperacaoSenhaService.hash(token), usuario.getId(),
                     Timestamp.from(Instant.now().plusSeconds(900)));
-            SimpleMailMessage mensagem = new SimpleMailMessage();
-            mensagem.setFrom(remetente); mensagem.setTo(usuario.getEmail());
-            mensagem.setSubject("Banco Acadêmico — confirme seu e-mail");
-            mensagem.setText("Confirme seu e-mail em até 15 minutos. O link só pode ser usado uma vez. "
-                    + "Se não criou uma conta, ignore esta mensagem.\n\n" + url + "#token=" + token);
-            mail.send(mensagem);
+            mail.enviar(usuario.getEmail(), "Banco Acadêmico — confirme seu e-mail",
+                    "Confirme seu e-mail em até 15 minutos. O link só pode ser usado uma vez. "
+                    + "Se não criou uma conta, ignore esta mensagem.\n\n" + url + "#token=" + token, false);
         });
     }
 

@@ -60,7 +60,7 @@ class EmailFalhasTests {
         appender.start(); logger.addAppender(appender);
         try {
             doThrow(falha("autenticacao")).when(mail).send(any(SimpleMailMessage.class));
-            var service = new ModeracaoEmailService(mail, "origem@example.test", "destino@example.test");
+            var service = new ModeracaoEmailService(new TransporteSmtp(mail, "origem@example.test"), "destino@example.test");
             assertDoesNotThrow(() -> service.notificar(new ModeracaoEmailService.MaterialPendente(
                     UUID.randomUUID(), "TITULO_PRIVADO", "DISCIPLINA_PRIVADA", "AUTOR_PRIVADO", Instant.now())));
             verify(mail, times(1)).send(any(SimpleMailMessage.class));

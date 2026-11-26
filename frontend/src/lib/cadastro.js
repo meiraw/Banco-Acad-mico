@@ -2,6 +2,8 @@ import { isEmailValido } from './academico.js'
 
 export const CURSO_ACADEMICO = 'Ciência da Computação'
 
+export const VERSAO_TERMOS = '1'
+
 export function validarCadastro({ nome, email, semestreAtual, senha, confirmacaoSenha }) {
   if (!nome.trim()) return 'Informe seu nome completo.'
   if (nome.trim().length > 200) return 'O nome deve ter no máximo 200 caracteres.'

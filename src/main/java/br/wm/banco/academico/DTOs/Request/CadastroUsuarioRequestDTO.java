@@ -26,4 +26,6 @@ public class CadastroUsuarioRequestDTO {
     @NotBlank(message = "Informe sua senha.")
     @Size(min = 8, message = "A senha deve possuir no mínimo 8 caracteres.")
     private String senha;
+
+    private String versaoTermosAceita;
 }

@@ -124,7 +124,7 @@ class AuthenticationTests {
             mvc.perform(post("/usuario").with(r -> { r.setRemoteAddr("198.51.100." + tentativa); return r; })
                     .contentType("application/json")
                     .content("{\"nome\":\"Teste\",\"email\":\"" + (i % 2 == 0 ? "teste@unemat.br" : "TESTE@UNEMAT.BR")
-                            + "\",\"senha\":\"Senha123!\",\"semestreAtual\":1}"))
+                            + "\",\"senha\":\"Senha123!\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":1}"))
                 .andExpect(i < 3 ? status().isConflict() : status().isTooManyRequests());
         }
         verify(usuarios, times(3)).findByEmail("teste@unemat.br");
@@ -136,7 +136,7 @@ class AuthenticationTests {
         for (int i = 0; i < 11; i++) {
             mvc.perform(post("/usuario").contentType("application/json")
                     .content("{\"nome\":\"Teste\",\"email\":\"teste" + i
-                            + "@example.test\",\"senha\":\"Senha123!\",\"semestreAtual\":1}"))
+                            + "@example.test\",\"senha\":\"Senha123!\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":1}"))
                 .andExpect(i < 10 ? status().isConflict() : status().isTooManyRequests());
         }
         verify(usuarios, times(10)).findByEmail(anyString());
@@ -145,12 +145,13 @@ class AuthenticationTests {
     @Test void cadastroPreservaBcryptEPerfilUser() throws Exception {
         when(usuarios.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
         mvc.perform(post("/usuario").contentType("application/json")
-                .content("{\"nome\":\"Novo\",\"email\":\"novo@unemat.br\",\"senha\":\"Senha123!\",\"semestreAtual\":3,\"curso\":\"Outro curso\",\"perfil\":\"ADMIN\"}"))
+                .content("{\"nome\":\"Novo\",\"email\":\"novo@unemat.br\",\"senha\":\"Senha123!\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":3,\"curso\":\"Outro curso\",\"perfil\":\"ADMIN\"}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("senha").doesNotExist())
                 .andExpect(jsonPath("curso").value("Ciência da Computação"))
                 .andExpect(jsonPath("semestreAtual").value(3));
         verify(usuarios).saveAndFlush(argThat(u -> !u.isEmailConfirmado() && u.getPerfil() == PerfilUsuario.USER
                 && u.getSemestreAtual() == 3 && u.getCurso().equals("Ciência da Computação")
+                && "1".equals(u.getVersaoTermosAceita()) && u.getTermosAceitosEm() != null
                 && encoder.matches("Senha123!", u.getSenha()) && !u.getSenha().equals("Senha123!")));
     }
     @Test void cadastroELoginAceitamDiferentesProvedoresSemEnviarEmail() throws Exception {
@@ -161,7 +162,7 @@ class AuthenticationTests {
         });
         for (String email : new String[]{"novo@gmail.com", "novo@outlook.com", "novo@unemat.br"}) {
             mvc.perform(post("/usuario").contentType("application/json")
-                    .content("{\"nome\":\"Novo\",\"email\":\"" + email + "\",\"senha\":\"Senha123!\",\"semestreAtual\":1}"))
+                    .content("{\"nome\":\"Novo\",\"email\":\"" + email + "\",\"senha\":\"Senha123!\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":1}"))
                     .andExpect(status().isCreated());
             mvc.perform(post("/auth/login").contentType("application/json")
                     .content("{\"email\":\"" + email + "\",\"senha\":\"Senha123!\"}"))
@@ -169,9 +170,17 @@ class AuthenticationTests {
         }
         verifyNoInteractions(context.getBean(br.wm.banco.academico.Service.ConfirmacaoEmailService.class));
     }
+    @Test void cadastroRejeitaAceiteAusenteOuDeOutraVersao() throws Exception {
+        String cadastro = "{\"nome\":\"Novo\",\"email\":\"novo@example.test\",\"senha\":\"Senha123!\",\"semestreAtual\":1";
+        for (String aceite : new String[]{"", ",\"versaoTermosAceita\":\"0\""}) {
+            mvc.perform(post("/usuario").contentType("application/json").content(cadastro + aceite + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        verify(usuarios, never()).saveAndFlush(any());
+    }
     @Test void cadastroDuplicadoEInvalido() throws Exception {
         mvc.perform(post("/usuario").contentType("application/json")
-                .content("{\"nome\":\"Teste\",\"email\":\"teste@unemat.br\",\"senha\":\"Senha123!\",\"semestreAtual\":8}"))
+                .content("{\"nome\":\"Teste\",\"email\":\"teste@unemat.br\",\"senha\":\"Senha123!\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":8}"))
                 .andExpect(status().isConflict());
         mvc.perform(post("/usuario").contentType("application/json").content("{}"))
                 .andExpect(status().isBadRequest());
@@ -180,16 +189,16 @@ class AuthenticationTests {
     @Test void cadastroRejeitaSemestreAusenteEForaDoIntervalo() throws Exception {
         for (String semestre : new String[]{"null", "0", "9", "-1"}) {
             mvc.perform(post("/usuario").contentType("application/json")
-                    .content("{\"nome\":\"Maria Silva\",\"email\":\"maria@gmail.com\",\"senha\":\"Senha123!\",\"semestreAtual\":" + semestre + "}"))
+                    .content("{\"nome\":\"Maria Silva\",\"email\":\"maria@gmail.com\",\"senha\":\"Senha123!\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":" + semestre + "}"))
                     .andExpect(status().isBadRequest());
         }
         verify(usuarios, never()).saveAndFlush(any());
     }
     @Test void cadastroRejeitaEmailInvalidoSenhaCurtaENomeVazio() throws Exception {
         for (String dados : new String[]{
-                "{\"nome\":\"Maria\",\"email\":\"invalido\",\"senha\":\"Senha123!\",\"semestreAtual\":1}",
-                "{\"nome\":\"Maria\",\"email\":\"maria@gmail.com\",\"senha\":\"1234567\",\"semestreAtual\":1}",
-                "{\"nome\":\"   \",\"email\":\"maria@gmail.com\",\"senha\":\"Senha123!\",\"semestreAtual\":1}"}) {
+                "{\"nome\":\"Maria\",\"email\":\"invalido\",\"senha\":\"Senha123!\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":1}",
+                "{\"nome\":\"Maria\",\"email\":\"maria@gmail.com\",\"senha\":\"1234567\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":1}",
+                "{\"nome\":\"   \",\"email\":\"maria@gmail.com\",\"senha\":\"Senha123!\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":1}"}) {
             mvc.perform(post("/usuario").contentType("application/json").content(dados))
                     .andExpect(status().isBadRequest());
         }
@@ -198,7 +207,7 @@ class AuthenticationTests {
     @Test void cadastroAceitaOitavoSemestreENormalizaEmail() throws Exception {
         when(usuarios.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
         mvc.perform(post("/usuario").contentType("application/json")
-                .content("{\"nome\":\" Maria Silva \",\"email\":\"MARIA@GMAIL.COM\",\"senha\":\"abcdefgh\",\"semestreAtual\":8}"))
+                .content("{\"nome\":\" Maria Silva \",\"email\":\"MARIA@GMAIL.COM\",\"senha\":\"abcdefgh\",\"versaoTermosAceita\":\"1\",\"semestreAtual\":8}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("nome").value("Maria Silva"))
                 .andExpect(jsonPath("email").value("maria@gmail.com"))
                 .andExpect(jsonPath("semestreAtual").value(8));

@@ -11,6 +11,7 @@ public final class DiagnosticoEmail {
     private DiagnosticoEmail() {}
 
     public static String categoria(Throwable falha) {
+        if (falha instanceof TransporteResend.Falha resend) return resend.diagnostico();
         var pendentes = new ArrayDeque<Throwable>();
         var visitados = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
         pendentes.add(falha);

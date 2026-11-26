@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Logo } from '../components/Logo.jsx'
 import { ThemeToggle } from '../components/ThemeToggle.jsx'
 import { BotaoVoltar } from '../components/BotaoVoltar.jsx'
+import { VERSAO_TERMOS } from '../lib/cadastro.js'
 
 export function Termos() {
   return (
@@ -18,6 +19,8 @@ export function Termos() {
       <main className="mx-auto max-w-3xl px-4 py-16 space-y-6 text-muted-foreground">
         <BotaoVoltar />
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Termos de uso</h1>
+        <p className="text-sm">Versão {VERSAO_TERMOS}</p>
+        <p>Ao criar uma conta, você aceita estas regras de uso e compartilhamento de materiais no Banco Acadêmico.</p>
         <p>Ao enviar um material, você declara ser responsável pelo conteúdo compartilhado e confirma que ele não viola direitos autorais de terceiros, conforme o Marco Civil da Internet (Lei nº 12.965/2014).</p>
         <p>Materiais protegidos por direitos autorais devem trazer a referência bibliográfica completa no momento do envio.</p>
         <p>Nunca envie provas, trabalhos ou anotações contendo dados pessoais sensíveis — CPF, telefone, matrícula ou notas — sem antes rasurar essas informações, conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).</p>

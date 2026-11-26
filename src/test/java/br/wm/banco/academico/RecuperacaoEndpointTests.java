@@ -74,7 +74,7 @@ class RecuperacaoEndpointTests {
  @Test void enviaCodigoSemLinkOuToken() throws Exception {
   JavaMailSender sender = mock(JavaMailSender.class);
   when(sender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
-  new RecuperacaoEmailService(sender, "nao-responda@example.org", "https://example.org/redefinir-senha")
+  new RecuperacaoEmailService(new TransporteSmtp(sender, "nao-responda@example.org"), "https://example.org/redefinir-senha")
     .enviar("teste@unemat.br", "0123");
   ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
   verify(sender).send(captor.capture());

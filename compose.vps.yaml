@@ -1,0 +1,7 @@
+services:
+  postgres:
+    ports: !reset []
+    networks: !override [dados]
+  clamav:
+    ports: !reset []
+

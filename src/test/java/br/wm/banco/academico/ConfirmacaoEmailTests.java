@@ -1,9 +1,12 @@
 package br.wm.banco.academico;
 
+import br.wm.banco.academico.Service.TransporteSmtp;
+
 import br.wm.banco.academico.Model.Usuario.UsuarioModel;
 import br.wm.banco.academico.Repository.UsuarioRepository;
 import br.wm.banco.academico.Service.ConfirmacaoEmailService;
 import br.wm.banco.academico.Service.RecuperacaoSenhaService;
+import br.wm.banco.academico.Service.TransporteResend;
 import org.junit.jupiter.api.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -11,6 +14,8 @@ import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -18,6 +23,8 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 class ConfirmacaoEmailTests {
     JdbcTemplate jdbc;
@@ -30,7 +37,7 @@ class ConfirmacaoEmailTests {
         jdbc = new JdbcTemplate(new DriverManagerDataSource("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", ""));
         jdbc.execute("CREATE TABLE confirmacoes_email(token_hash CHAR(64) PRIMARY KEY, usuario_id UUID, expira_em TIMESTAMP WITH TIME ZONE)");
         usuarios = mock(UsuarioRepository.class); mail = mock(JavaMailSender.class);
-        service = new ConfirmacaoEmailService(usuarios, jdbc, mail, "envio@example.org", "https://example.org/confirmar-email",
+        service = new ConfirmacaoEmailService(usuarios, jdbc, new TransporteSmtp(mail, "envio@example.org"), "https://example.org/confirmar-email",
                 new org.springframework.jdbc.datasource.DataSourceTransactionManager(jdbc.getDataSource()));
         usuario = new UsuarioModel(); usuario.setEmail("teste@example.org");
         ReflectionTestUtils.setField(usuario, "id", UUID.randomUUID());
@@ -62,6 +69,26 @@ class ConfirmacaoEmailTests {
             assertThrows(ResponseStatusException.class, () -> service.confirmar(valor));
         assertFalse(usuario.isEmailConfirmado());
         verify(usuarios, never()).saveAndFlush(any());
+    }
+    @Test void confirmacaoViaResendPreservaLinkAnteriorQuandoReenvioFalha() {
+        service.solicitar(usuario.getEmail());
+        String anterior = token;
+        var builder = RestClient.builder();
+        var api = MockRestServiceServer.bindTo(builder).build();
+        api.expect(requestTo("https://api.resend.com/emails"))
+                .andExpect(jsonPath("$.text").value(org.hamcrest.Matchers.containsString(
+                        "https://example.org/confirmar-email#token=")))
+                .andRespond(withServiceUnavailable());
+        var confirmacao = new ConfirmacaoEmailService(usuarios, jdbc,
+                new TransporteResend(builder.build(), "envio@example.org"), "https://example.org/confirmar-email",
+                new org.springframework.jdbc.datasource.DataSourceTransactionManager(jdbc.getDataSource()));
+
+        confirmacao.solicitar(usuario.getEmail());
+        assertEquals(RecuperacaoSenhaService.hash(anterior),
+                jdbc.queryForObject("SELECT token_hash FROM confirmacoes_email", String.class));
+        confirmacao.confirmar(anterior);
+        assertTrue(usuario.isEmailConfirmado());
+        api.verify();
     }
     @Test void reenvioInvalidaLinkAnterior() {
         service.solicitar(usuario.getEmail()); String anterior = token;

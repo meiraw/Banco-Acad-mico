@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint((req, res, ex) -> SecurityResponse.write(res, 401))
                         .accessDeniedHandler((req, res, ex) -> SecurityResponse.write(res, 403)))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/forum", "/forum/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/favoritos", "/favoritos/**").hasAnyRole("USER", "ADMIN")

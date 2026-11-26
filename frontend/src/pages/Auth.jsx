@@ -4,7 +4,7 @@ import { Mail, User, ArrowRight, ArrowLeft, MailCheck } from 'lucide-react'
 import { AuthLayout } from '../components/AuthLayout.jsx'
 import { CampoSenha } from '../components/CampoSenha.jsx'
 import { isEmailValido } from '../lib/academico.js'
-import { CURSO_ACADEMICO, validarCadastro } from '../lib/cadastro.js'
+import { CURSO_ACADEMICO, VERSAO_TERMOS, validarCadastro } from '../lib/cadastro.js'
 import { useSessao } from '../lib/sessao.jsx'
 import { guardarAutorizacao } from '../lib/recuperacao.js'
 import { api } from '../lib/api.js'
@@ -20,6 +20,7 @@ export function Auth() {
   const [email, setEmail] = useState(location.state?.email || '')
   const [senha, setSenha] = useState('')
   const [confirmacaoSenha, setConfirmacaoSenha] = useState('')
+  const [aceitouTermos, setAceitouTermos] = useState(false)
   const [semestreAtual, setSemestreAtual] = useState('')
   const envioEmCurso = useRef(false)
   const [erro, setErro] = useState(location.state?.mensagem || '')
@@ -57,6 +58,7 @@ export function Auth() {
     if (aba === 'cadastro') {
       const mensagem = validarCadastro({ nome, email, semestreAtual, senha, confirmacaoSenha })
       if (mensagem) { setErro(mensagem); return }
+      if (!aceitouTermos) { setErro('Aceite os Termos de Uso para continuar.'); return }
     } else if (senha.length < 6) { setErro('A senha precisa ter pelo menos 6 caracteres.'); return }
     let cadastroRealizado = false
     try {
@@ -64,7 +66,7 @@ export function Auth() {
       setEnviando(true)
       const dados = { email: email.trim().toLowerCase(), senha }
       if (aba === 'cadastro') {
-        await api.cadastrar({ ...dados, nome: nome.trim(), semestreAtual: Number(semestreAtual) })
+        await api.cadastrar({ ...dados, nome: nome.trim(), semestreAtual: Number(semestreAtual), versaoTermosAceita: VERSAO_TERMOS })
         cadastroRealizado = true
       }
       const { token } = await api.login(dados)
@@ -185,6 +187,17 @@ export function Auth() {
             )}
 
             {aba === 'cadastro' && <CampoSenha id="confirmacao-senha" rotulo="Confirmar senha" valor={confirmacaoSenha} onChange={setConfirmacaoSenha} autoComplete="new-password" />}
+
+            {aba === 'cadastro' && <div className="flex items-start gap-2 text-sm">
+              <input id="aceite-termos" type="checkbox" checked={aceitouTermos}
+                onChange={e => setAceitouTermos(e.target.checked)} required className="mt-1 size-4 shrink-0 accent-primary" />
+              <div>
+                <label htmlFor="aceite-termos">Li e aceito os Termos de Uso da plataforma.</label>{' '}
+                <Link to="/termos" target="_blank" rel="noopener" className="font-semibold text-primary underline">
+                  Ler os Termos de Uso (nova aba)
+                </Link>
+              </div>
+            </div>}
 
             {erro && <p className="text-sm text-destructive" role="alert">{erro}</p>}
 
