@@ -1,4 +1,4 @@
-const BASE = '/api'
+const BASE = import.meta.env.VITE_API_URL || '/api'
 
 async function req(path, { publico, resposta, ...opts } = {}) {
   // Rotas publicas (ex.: recuperacao de senha) nao enviam Authorization: o backend rejeita
