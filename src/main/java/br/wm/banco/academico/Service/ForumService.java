@@ -85,6 +85,17 @@ public class ForumService {
     }
     public DiscussaoResponseDTO buscar(UUID id) { return dto(discussao(id, false)); }
 
+    public UUID autorDiscussao(UUID id) {
+        var autor = discussao(id, false).getAutor();
+        return autor == null ? null : autor.getId();
+    }
+
+    public UUID autorResposta(UUID discussaoId, UUID respostaId) {
+        discussao(discussaoId, false);
+        var autor = resposta(discussaoId, respostaId).getAutor();
+        return autor == null ? null : autor.getId();
+    }
+
     @Transactional
     public DiscussaoResponseDTO criar(String email, DiscussaoRequestDTO dados) {
         var d = new DiscussaoModel();

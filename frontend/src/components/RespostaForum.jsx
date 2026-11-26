@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Avatar } from './Avatar.jsx'
+import { AvatarAutor } from './AvatarAutor.jsx'
 import { api } from '../lib/api.js'
 import { useSessao } from '../lib/sessao.jsx'
 
@@ -29,7 +29,7 @@ export function RespostaForum({ resposta, onAtualizar }) {
   }
   return <article className="card-surface min-w-0 space-y-3 p-5">
     <header className="flex flex-wrap items-start justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-3"><Avatar nome={resposta.autorNome} className="size-9 shrink-0 text-sm" /><div className="min-w-0"><p className="break-words font-semibold">{resposta.autorNome}</p><time className="text-xs text-muted-foreground" dateTime={resposta.criadoEm}>{new Date(resposta.criadoEm).toLocaleString('pt-BR')}</time></div></div>
+      <div className="flex min-w-0 items-center gap-3"><AvatarAutor discussaoId={resposta.discussaoId} respostaId={resposta.id} autorNome={resposta.autorNome} className="size-9 shrink-0 text-sm" /><div className="min-w-0"><p className="break-words font-semibold">{resposta.autorNome}</p><time className="text-xs text-muted-foreground" dateTime={resposta.criadoEm}>{new Date(resposta.criadoEm).toLocaleString('pt-BR')}</time></div></div>
       <div className="flex flex-wrap gap-2">{propria && !editando && <button type="button" className="btn btn-ghost" disabled={ocupado} onClick={() => { setTexto(resposta.conteudo); setErro(''); setEditando(true) }}>Editar</button>}
         {(propria || perfil?.perfil === 'ADMIN') && <button type="button" className="btn btn-ghost text-destructive" disabled={ocupado} onClick={excluir}>Excluir</button>}</div>
     </header>

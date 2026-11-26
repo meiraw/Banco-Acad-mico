@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api.js'
-import { Avatar } from './Avatar.jsx'
+import { AvatarAutor } from './AvatarAutor.jsx'
 import { useSessao } from '../lib/sessao.jsx'
 
 const data = valor => new Date(valor).toLocaleString('pt-BR')
@@ -65,7 +65,7 @@ export function ComentarioPublicacao({ materialId, comentario }) {
 
   return <article className="border-t border-border pt-5">
     <div className="flex gap-3">
-      <Avatar nome={comentario.autorNome} className="size-9" />
+      <AvatarAutor materialId={materialId} comentarioId={comentario.id} autorNome={comentario.autorNome} className="size-9" />
       <div className="min-w-0 flex-1">
         <p className="font-medium">{comentario.autorNome}</p>
         <time dateTime={comentario.criadoEm} className="text-xs text-muted-foreground">{data(comentario.criadoEm)}</time>
@@ -92,7 +92,7 @@ export function ComentarioPublicacao({ materialId, comentario }) {
           {mensagem && <p role="status" className="text-sm text-secondary">{mensagem}</p>}
           {erro && <p role="alert" className="text-sm text-destructive">{erro} <button type="button" disabled={carregando || enviando} onClick={() => carregar(0)} className="underline">Recarregar respostas</button></p>}
           {respostas.map(r => <article key={r.id} className="flex gap-2">
-            <Avatar nome={r.autorNome} className="size-8 text-xs" />
+            <AvatarAutor materialId={materialId} comentarioId={comentario.id} respostaId={r.id} autorNome={r.autorNome} className="size-8 text-xs" />
             <div className="min-w-0"><p className="text-sm font-semibold">{r.autorNome}</p><time dateTime={r.criadoEm} className="text-xs text-muted-foreground">{data(r.criadoEm)}</time>
               {r.respondendoA && <p className="mt-1 text-xs text-secondary">Em resposta a {r.respondendoA}</p>}
               <p className="mt-1 whitespace-pre-wrap break-words text-sm">{r.texto}</p>

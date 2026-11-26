@@ -43,9 +43,13 @@ public class FotoPerfilService {
     }
 
     public byte[] buscar(String email) {
+        return buscarPorUsuario(usuarioAtual(email).getId());
+    }
+
+    public byte[] buscarPorUsuario(UUID usuarioId) {
         var fotos = jdbc.query("SELECT conteudo FROM fotos_perfil WHERE usuario_id = ?",
-                (rs, n) -> rs.getBytes(1), usuarioAtual(email).getId());
-        if (fotos.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sua conta ainda não tem foto.");
+                (rs, n) -> rs.getBytes(1), usuarioId);
+        if (fotos.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Foto de perfil não encontrada.");
         return fotos.getFirst();
     }
 

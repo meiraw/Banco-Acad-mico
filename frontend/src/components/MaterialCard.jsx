@@ -4,7 +4,7 @@ import { corSemestre } from '../lib/academico.js'
 import { useFavoritos } from '../lib/useFavoritos.js'
 import { PreviaArquivo } from './PreviaArquivo.jsx'
 import { Link } from 'react-router-dom'
-import { Avatar } from './Avatar.jsx'
+import { AvatarAutor } from './AvatarAutor.jsx'
 import { StatusModeracao } from './StatusModeracao.jsx'
 import { rotuloTipoPublicacao } from '../lib/tipoPublicacao.js'
 import { useState } from 'react'
@@ -61,7 +61,7 @@ export function MaterialCard({ material, disciplina, semestreIndice, semestre, c
         </h3>
 
         <div className="flex min-w-0 items-center gap-2">
-          <Avatar nome={material.autorNome} className="size-7 text-xs" />
+          <AvatarAutor materialId={material.id} autorNome={material.autorNome} className="size-7 text-xs" />
           <p className="min-w-0 break-words text-sm text-muted-foreground">
             Publicado por <span className="font-semibold text-foreground">{material.autorNome || 'Autor não informado'}</span>
           </p>

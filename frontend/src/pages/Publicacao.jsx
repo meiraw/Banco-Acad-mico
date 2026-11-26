@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Download, Heart, MessageCircle } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
-import { Avatar } from '../components/Avatar.jsx'
+import { AvatarAutor } from '../components/AvatarAutor.jsx'
 import { api, categoria, tamanho, rotuloSemestre } from '../lib/api.js'
 import { useFavoritos } from '../lib/useFavoritos.js'
 import { CurtirMaterial } from '../components/CurtirMaterial.jsx'
@@ -105,7 +105,7 @@ export function Publicacao() {
           <DadosPublicacao material={material} />
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Avatar nome={material.autorNome} className="size-10" />
+              <AvatarAutor materialId={material.id} autorNome={material.autorNome} className="size-10" />
               <div className="min-w-0"><p className="text-xs text-muted-foreground">Publicado por</p>
                 <p className="break-words text-base font-semibold">{material.autorNome || 'Autor não informado'}</p>
                 {material.publicadoEm && <time dateTime={material.publicadoEm} className="text-xs text-muted-foreground">{data(material.publicadoEm)}</time>}

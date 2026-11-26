@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '../components/AppShell.jsx'
-import { Avatar } from '../components/Avatar.jsx'
+import { AvatarAutor } from '../components/AvatarAutor.jsx'
 import { FormularioDiscussao } from '../components/FormularioDiscussao.jsx'
 import { RespostaForum } from '../components/RespostaForum.jsx'
 import { PaginacaoForum } from '../components/PaginacaoForum.jsx'
@@ -75,7 +75,7 @@ export function Discussao() {
     {discussao && <>
       {editando ? <div className="space-y-3"><h1 className="text-2xl font-bold">Editar discussão</h1><FormularioDiscussao key={`${discussao.id}-${discussao.versao}`} inicial={discussao} onSalvar={editar} onCancelar={() => setEditando(false)} /><button className="text-sm text-secondary underline" onClick={atualizar}>Recarregar versão atual</button></div> : <article className="card-surface min-w-0 space-y-5 p-5 sm:p-8">
         <header className="space-y-4"><span className="chip on max-w-full break-words whitespace-normal">{discussao.disciplinaNome}</span><h1 className="break-words text-2xl font-bold sm:text-3xl">{discussao.titulo}</h1>
-          <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-3"><Avatar nome={discussao.autorNome} className="size-10 shrink-0 text-sm" /><div className="min-w-0"><p className="break-words font-semibold">{discussao.autorNome}</p><time dateTime={discussao.criadoEm} className="text-xs text-muted-foreground">{new Date(discussao.criadoEm).toLocaleString('pt-BR')}</time></div></div>
+          <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-3"><AvatarAutor discussaoId={discussao.id} autorNome={discussao.autorNome} className="size-10 shrink-0 text-sm" /><div className="min-w-0"><p className="break-words font-semibold">{discussao.autorNome}</p><time dateTime={discussao.criadoEm} className="text-xs text-muted-foreground">{new Date(discussao.criadoEm).toLocaleString('pt-BR')}</time></div></div>
             <div className="flex flex-wrap gap-2">{propria && <button type="button" className="btn btn-outline" disabled={ocupado || carregando} onClick={() => setEditando(true)}>Editar</button>}{(propria || perfil?.perfil === 'ADMIN') && <button type="button" className="btn btn-outline text-destructive" disabled={ocupado || carregando} onClick={excluir}>Excluir</button>}</div>
           </div></header>
         <p className="whitespace-pre-wrap break-words leading-relaxed">{discussao.conteudo}</p>

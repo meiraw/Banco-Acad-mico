@@ -29,6 +29,11 @@ const reqPagina = path => req(path).then(resultado => {
 export const api = {
   discussoes: (filtros = {}) => reqPagina(`/forum/discussoes?${new URLSearchParams(filtros)}`),
   discussao: id => req(`/forum/discussoes/${encodeURIComponent(id)}`),
+  fotoAutorForum(discussaoId, respostaId) {
+    let path = `/forum/discussoes/${encodeURIComponent(discussaoId)}`
+    if (respostaId) path += `/respostas/${encodeURIComponent(respostaId)}`
+    return req(`${path}/foto-autor`, { resposta: 'blob' })
+  },
   criarDiscussao: dados => req('/forum/discussoes', { method: 'POST', ...json(dados) }),
   editarDiscussao: (id, dados) => req(`/forum/discussoes/${encodeURIComponent(id)}`, { method: 'PUT', ...json(dados) }),
   excluirDiscussao: id => req(`/forum/discussoes/${encodeURIComponent(id)}`, { method: 'DELETE' }),
@@ -45,6 +50,12 @@ export const api = {
   rejeitarMaterial: (id, justificativa) => req(`/admin/materiais/${id}/rejeitar`, { method: 'PATCH', ...json({ justificativa }) }),
   arquivoMaterial: id => req(`/material/${id}/arquivo`, { resposta: 'blob' }),
   material: id => req(`/material/${id}`),
+  fotoAutorMaterial(materialId, comentarioId, respostaId) {
+    let path = `/material/${encodeURIComponent(materialId)}`
+    if (comentarioId) path += `/comentarios/${encodeURIComponent(comentarioId)}`
+    if (respostaId) path += `/respostas/${encodeURIComponent(respostaId)}`
+    return req(`${path}/foto-autor`, { resposta: 'blob' })
+  },
   comentarios: (id, pagina = 0) => req(`/material/${id}/comentarios?pagina=${pagina}`),
   comentar: (id, texto) => req(`/material/${id}/comentarios`, { method: 'POST', ...json({ texto }) }),
   curtida: id => req(`/material/${id}/curtida`),

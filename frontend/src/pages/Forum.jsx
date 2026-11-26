@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Search, SlidersHorizontal, Plus, MessagesSquare, MessageCircle } from 'lucide-react'
 import { AppShell } from '../components/AppShell.jsx'
-import { Avatar } from '../components/Avatar.jsx'
+import { AvatarAutor } from '../components/AvatarAutor.jsx'
 import { PaginacaoForum } from '../components/PaginacaoForum.jsx'
 import { api } from '../lib/api.js'
 
@@ -74,7 +74,7 @@ export function Forum() {
     <div className="space-y-4">{pagina?.content.map(d => <Link key={d.id} to={`/forum/${d.id}`} className="card-surface block min-w-0 space-y-3 p-5 transition-colors hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
       <div className="flex flex-wrap items-center justify-between gap-2"><span className="chip on max-w-full break-words whitespace-normal">{d.disciplinaNome}</span><time dateTime={d.criadoEm} className="text-xs text-muted-foreground">{new Date(d.criadoEm).toLocaleString('pt-BR')}</time></div>
       <h2 className="break-words text-lg font-semibold text-primary">{d.titulo}</h2><p className="break-words text-sm text-muted-foreground">{d.previa}{d.previa.length === 240 ? '…' : ''}</p>
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground"><span className="flex min-w-0 items-center gap-2"><Avatar nome={d.autorNome} className="size-8 shrink-0 text-xs" /><span className="break-words">{d.autorNome}</span></span><span className="flex items-center gap-2"><MessageCircle className="size-4" />{d.totalRespostas} {d.totalRespostas === 1 ? 'resposta' : 'respostas'}</span></div>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground"><span className="flex min-w-0 items-center gap-2"><AvatarAutor discussaoId={d.id} autorNome={d.autorNome} className="size-8 shrink-0 text-xs" /><span className="break-words">{d.autorNome}</span></span><span className="flex items-center gap-2"><MessageCircle className="size-4" />{d.totalRespostas} {d.totalRespostas === 1 ? 'resposta' : 'respostas'}</span></div>
     </Link>)}</div>
     <PaginacaoForum pagina={pagina} onChange={p => alterar('page', String(p))} desabilitado={carregando} />
   </div></AppShell>
